@@ -140,12 +140,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 
   const updateProfile = (bio: string) => {
+    if (!user) return;
+    if (user.isLichess) {
+      window.open("https://lichess.org/account/profile", "_blank", "noopener,noreferrer");
+      throw new Error("La bio d'un compte Lichess doit être modifiée uniquement sur le site officiel Lichess.");
+    }
+
     setUser((current) => {
       if (!current) return current;
-      if (current.isLichess) {
-        alert("La bio d'un compte Lichess doit être modifiée directement sur lichess.org");
-        return current;
-      }
       
       const users = readUsers();
       const updated = users.map((u) => (u.id === current.id ? { ...u, bio } : u));
