@@ -31,6 +31,7 @@ def lichess_login():
         f"https://lichess.org/oauth?response_type=code"
         f"&client_id={CLIENT_ID}"
         f"&redirect_uri={REDIRECT_URI}"
+        f"&scope=puzzle:read%20bot:play"
         f"&code_challenge_method=S256"
         f"&code_challenge={code_challenge}"
         f"&state={state}"
