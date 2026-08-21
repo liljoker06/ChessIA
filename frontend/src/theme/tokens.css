@@ -1,49 +1,43 @@
-/* Design tokens extracted for real from a Wayback Machine snapshot of
-   europe-echecs.com (Cloudflare blocks live scraping, the archive doesn't).
-   Values below are read straight from computed styles: body bg #061d2c,
-   text #dee2e6, gold accent #ffd30e, Bootstrap danger red #dc3545,
-   secondary blue #175781, system-ui font stack, Bootstrap-era 6-12px radii. */
-
+/* Dark theme: chess.com's real look (near-black warm gray + green accent) — the default. */
 :root {
-  /* Dark navy is the site's actual default look, not a toggle-away option. */
-  --background: #061d2c;
-  --surface: #0f2740;
-  --surface-muted: #123049;
-  --text-primary: #eef2f5;
-  --text-muted: #8ea0af;
-  --accent: #ffd30e;
-  --accent-strong: #ffdd45;
-  --accent-text: #061d2c;
-  --secondary: #175781;
-  --secondary-strong: #1f6f9f;
+  --background: #262421;
+  --surface: #2e2b27;
+  --surface-muted: #3a3530;
+  --text-primary: #f5f3ef;
+  --text-muted: #b0a89d;
+  --accent: #81b64c;
+  --accent-strong: #6aab3a;
+  --accent-text: #ffffff;
+  --secondary: #3a3530;
+  --secondary-strong: #46403a;
   --secondary-text: #ffffff;
-  --border: #1c3a52;
-  --border-subtle: #16324a;
+  --border: #3d3a35;
+  --border-subtle: #34302b;
 
-  --success-bg: #123425;
-  --success-text: #4caf6e;
+  --success-bg: #1e3a1a;
+  --success-text: #81b64c;
   --warning-bg: #3a2f0c;
-  --warning-text: #ffd30e;
-  --danger: #dc3545;
-  --info-bg: #0f2740;
+  --warning-text: #e0ac00;
+  --danger: #e0524a;
+  --info-bg: #2e2b27;
 
-  --board-light: #ece3cf;
-  --board-dark: #175781;
-  --board-highlight: #ffd30e;
-  --board-check: #dc3545;
+  --board-light: #ebecd0;
+  --board-dark: #779556;
+  --board-highlight: #f6f682;
+  --board-check: #e0524a;
 
   --shadow-subtle: 0 1px 3px rgba(0, 0, 0, 0.35);
   --shadow-raised: 0 8px 20px rgba(0, 0, 0, 0.4);
   --shadow-floating: 0 18px 44px rgba(0, 0, 0, 0.55);
-  --shadow-glow: 0 8px 24px rgba(255, 211, 14, 0.28);
+  --shadow-glow: 0 8px 24px rgba(129, 182, 76, 0.3);
 
-  --radius-sm: 6px;
-  --radius-md: 12px;
-  --radius-lg: 18px;
+  --radius-sm: 3px;
+  --radius-md: 8px;
+  --radius-lg: 16px;
   --radius-pill: 999px;
 
-  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
-  --font-display: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --font-body: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", sans-serif;
+  --font-display: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", sans-serif;
 
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --duration-fast: 150ms;
@@ -51,36 +45,36 @@
   --duration-slow: 400ms;
 }
 
-/* Light is the secondary, toggle-away option (not extracted — derived to stay legible). */
+/* Light is our own alternate look (chess.com's real UI is dark-only) — kept for people who prefer it. */
 :root[data-theme="light"] {
-  --background: #f4f7f9;
+  --background: #ffffff;
   --surface: #ffffff;
-  --surface-muted: #e9eef2;
-  --text-primary: #0c1f2e;
-  --text-muted: #5b6b78;
-  --accent: #e0ac00;
-  --accent-strong: #c99700;
-  --accent-text: #061d2c;
-  --secondary: #175781;
-  --secondary-strong: #124366;
-  --secondary-text: #ffffff;
-  --border: #dbe3e8;
-  --border-subtle: #e8edf0;
+  --surface-muted: #f0f1ed;
+  --text-primary: #1b1a17;
+  --text-muted: #6b6b68;
+  --accent: #81b64c;
+  --accent-strong: #6aab3a;
+  --accent-text: #ffffff;
+  --secondary: #e8e8e4;
+  --secondary-strong: #dcdcd7;
+  --secondary-text: #1b1a17;
+  --border: #d8d8d3;
+  --border-subtle: #e8e8e4;
 
-  --success-bg: #e4f5ea;
-  --success-text: #1e7a41;
+  --success-bg: #eafff0;
+  --success-text: #2f7a1e;
   --warning-bg: #fdf2d8;
   --warning-text: #8a6600;
   --danger: #c62838;
-  --info-bg: #eef4f8;
+  --info-bg: #eafff0;
 
-  --board-light: #ece3cf;
-  --board-dark: #175781;
-  --board-highlight: #e0ac00;
+  --board-light: #ebecd0;
+  --board-dark: #779556;
+  --board-highlight: #c8dc7a;
   --board-check: #c62838;
 
-  --shadow-subtle: 0 1px 3px rgba(12, 31, 46, 0.1);
-  --shadow-raised: 0 8px 20px rgba(12, 31, 46, 0.12);
-  --shadow-floating: 0 18px 44px rgba(12, 31, 46, 0.2);
-  --shadow-glow: 0 8px 24px rgba(224, 172, 0, 0.25);
+  --shadow-subtle: 0 1px 3px rgba(27, 26, 23, 0.1);
+  --shadow-raised: 0 8px 20px rgba(27, 26, 23, 0.12);
+  --shadow-floating: 0 18px 44px rgba(27, 26, 23, 0.2);
+  --shadow-glow: 0 8px 24px rgba(129, 182, 76, 0.25);
 }

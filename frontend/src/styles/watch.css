@@ -1,6 +1,9 @@
 .watch-page {
   padding: 32px 24px 64px;
   flex: 1;
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
 }
 
 .watch-layout {
@@ -9,6 +12,12 @@
   align-items: flex-start;
   flex-wrap: wrap;
   justify-content: center;
+}
+
+@media (min-width: 1400px) {
+  .watch-layout {
+    flex-wrap: nowrap;
+  }
 }
 
 .board-column {

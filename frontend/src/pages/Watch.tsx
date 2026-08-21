@@ -40,7 +40,11 @@ function pieceValue(type: PieceSymbol): number {
   }
 }
 
-export function Watch() {
+interface WatchProps {
+  showOptions: boolean;
+}
+
+export function Watch({ showOptions }: WatchProps) {
   const { settings, update: updateSetting } = useGameSettings();
   const boardTheme = BOARD_THEMES.find((t) => t.id === settings.boardThemeId) ?? BOARD_THEMES[0];
 
@@ -54,11 +58,9 @@ export function Watch() {
   const [thinking, setThinking] = useState(false);
   const [running, setRunning] = useState(true);
   const [enginesReady, setEnginesReady] = useState(false);
-  const [whiteDifficultyId, setWhiteDifficultyId] = useState(DIFFICULTIES[1].id);
-  const [blackDifficultyId, setBlackDifficultyId] = useState(DIFFICULTIES[1].id);
+  const [difficultyId, setDifficultyId] = useState(DIFFICULTIES[1].id);
 
-  const whiteDifficulty = DIFFICULTIES.find((d) => d.id === whiteDifficultyId) ?? DIFFICULTIES[1];
-  const blackDifficulty = DIFFICULTIES.find((d) => d.id === blackDifficultyId) ?? DIFFICULTIES[1];
+  const difficulty = DIFFICULTIES.find((d) => d.id === difficultyId) ?? DIFFICULTIES[1];
 
   const game = gameRef.current;
   const rerender = () => setVersion((v) => v + 1);
@@ -68,7 +70,7 @@ export function Watch() {
   const inCheck = game.inCheck();
   const isGameOver = game.isGameOver();
 
-  // Spin up one engine per side, once.
+  // The engine drives both sides of the board — it's one AI playing out a full game, not two AIs facing off.
   useEffect(() => {
     const whiteEngine = new StockfishEngine();
     const blackEngine = new StockfishEngine();
@@ -76,8 +78,8 @@ export function Watch() {
     blackEngineRef.current = blackEngine;
     (async () => {
       await Promise.all([
-        whiteEngine.setSkillLevel(whiteDifficulty.skillLevel),
-        blackEngine.setSkillLevel(blackDifficulty.skillLevel),
+        whiteEngine.setSkillLevel(difficulty.skillLevel),
+        blackEngine.setSkillLevel(difficulty.skillLevel),
       ]);
       await Promise.all([whiteEngine.newGame(), blackEngine.newGame()]);
       setEnginesReady(true);
@@ -89,19 +91,17 @@ export function Watch() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // A difficulty change takes effect starting the next move that side makes.
+  // A difficulty change takes effect starting with the next move played.
   useEffect(() => {
-    whiteEngineRef.current?.setSkillLevel(whiteDifficulty.skillLevel);
-  }, [whiteDifficulty]);
-  useEffect(() => {
-    blackEngineRef.current?.setSkillLevel(blackDifficulty.skillLevel);
-  }, [blackDifficulty]);
+    whiteEngineRef.current?.setSkillLevel(difficulty.skillLevel);
+    blackEngineRef.current?.setSkillLevel(difficulty.skillLevel);
+  }, [difficulty]);
 
-  // Whenever it's a side's turn (and playback is running), ask its engine for a move.
+  // Whenever it's a side's turn (and playback is running), ask the engine for a move.
   useEffect(() => {
     if (!enginesReady || !running || isGameOver) return;
     const engine = turn === "w" ? whiteEngineRef.current : blackEngineRef.current;
-    const movetimeMs = turn === "w" ? whiteDifficulty.movetimeMs : blackDifficulty.movetimeMs;
+    const movetimeMs = difficulty.movetimeMs;
     if (!engine) return;
 
     let cancelled = false;
@@ -156,9 +156,9 @@ export function Watch() {
     if (game.isInsufficientMaterial()) return "Nulle — matériel insuffisant.";
     if (game.isDrawByFiftyMoves()) return "Nulle — règle des 50 coups.";
     if (game.isDraw()) return "Partie nulle.";
-    if (!enginesReady) return "Chargement des IA…";
+    if (!enginesReady) return "Chargement de l'IA…";
     if (!running) return "En pause.";
-    if (thinking) return `${turn === "w" ? "L'IA Blancs" : "L'IA Noirs"} réfléchit…`;
+    if (thinking) return "L'IA réfléchit…";
     if (inCheck) return `Échec au roi ${turn === "w" ? "blanc" : "noir"} !`;
     return `Trait aux ${turn === "w" ? "Blancs" : "Noirs"}`;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -175,34 +175,19 @@ export function Watch() {
   }
 
   return (
-    <div className="watch-page container">
+    <div className="watch-page">
       <div className="watch-layout">
-        <GameOptionsPanel settings={settings} onChange={updateSetting} />
+        {showOptions && <GameOptionsPanel settings={settings} onChange={updateSetting} />}
 
         <div className="board-column">
           <div className="card match-controls">
             <div className="difficulty-picker">
               <label>
-                <span className="difficulty-label">IA Blancs</span>
+                <span className="difficulty-label">Niveau de l'IA</span>
                 <select
                   className="input"
-                  value={whiteDifficultyId}
-                  onChange={(e) => setWhiteDifficultyId(e.target.value)}
-                >
-                  {DIFFICULTIES.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <span className="difficulty-vs">vs</span>
-              <label>
-                <span className="difficulty-label">IA Noirs</span>
-                <select
-                  className="input"
-                  value={blackDifficultyId}
-                  onChange={(e) => setBlackDifficultyId(e.target.value)}
+                  value={difficultyId}
+                  onChange={(e) => setDifficultyId(e.target.value)}
                 >
                   {DIFFICULTIES.map((d) => (
                     <option key={d.id} value={d.id}>

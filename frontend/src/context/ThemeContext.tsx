@@ -14,7 +14,7 @@ const STORAGE_KEY = "chess-theme";
 function getInitialTheme(): Theme {
   const stored = localStorage.getItem(STORAGE_KEY);
   if (stored === "light" || stored === "dark") return stored;
-  // Dark navy is the brand's default look (not just a system-preference toggle).
+  // Dark + green (chess.com's real look) is the brand's default; light is an opt-in alternate.
   return "dark";
 }
 

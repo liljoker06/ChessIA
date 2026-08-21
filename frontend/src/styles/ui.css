@@ -91,6 +91,11 @@
   font-size: 1.2rem;
 }
 
+.btn-lg {
+  padding: 18px 40px;
+  font-size: 1.6rem;
+}
+
 .btn-block {
   width: 100%;
 }
@@ -217,50 +222,222 @@
   }
 }
 
-/* Nav — a single clean row: logo, the two things you can actually do, then account. */
-.nav {
+/* App shell — a real labeled sidebar pinned to the left, content fills the rest. */
+.app-shell {
   display: flex;
-  align-items: center;
-  gap: 24px;
-  padding: 14px 32px;
-  background: var(--background);
-  position: sticky;
-  top: 0;
-  z-index: 50;
-  border-bottom: 1px solid var(--border);
+  min-height: 100vh;
 }
 
-.nav-logo {
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-size: 1.8rem;
+.app-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  width: 240px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px 16px;
+  background: var(--background);
+  border-right: 1px solid var(--border);
+  z-index: 50;
+}
+
+.sidebar-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  color: var(--accent);
+  justify-content: space-between;
+  margin-bottom: 16px;
+  flex-shrink: 0;
+}
+
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
   text-decoration: none;
   flex-shrink: 0;
 }
 
-.nav-logo .piece {
-  color: var(--accent);
-  font-size: 2.1rem;
+.sidebar-close-button {
+  display: none;
 }
 
-.nav-actions {
+.sidebar-brand-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: var(--accent-text);
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-left: auto;
+  justify-content: center;
+  font-size: 2rem;
+  flex-shrink: 0;
 }
 
-.nav .btn-ghost {
-  border-color: var(--border);
+.sidebar-brand-name {
+  font-weight: 800;
+  font-size: 1.6rem;
   color: var(--text-primary);
 }
 
-.nav .btn-ghost:hover:not(:disabled) {
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sidebar-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 12px;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  font-size: 1.4rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color var(--duration-fast) ease, color var(--duration-fast) ease;
+}
+
+.sidebar-nav-item:hover {
   background: var(--surface-muted);
+  color: var(--text-primary);
+}
+
+.sidebar-nav-item-active {
+  background: var(--surface-muted);
+  color: var(--accent);
+}
+
+.sidebar-spacer {
+  flex: 1;
+}
+
+.sidebar-auth {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 4px;
+  margin-bottom: 8px;
+}
+
+.sidebar-auth-badge {
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.sidebar .theme-switch {
+  align-self: center;
+  margin-top: 4px;
+}
+
+.mobile-topbar {
+  display: none;
+}
+
+.sidebar-backdrop {
+  display: none;
+}
+
+@media (max-width: 899px) {
+  .app-shell {
+    flex-direction: column;
+  }
+
+  .mobile-topbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: var(--background);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 40;
+  }
+
+  .mobile-menu-button {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+
+  .mobile-menu-button:hover {
+    background: var(--surface-muted);
+  }
+
+  .mobile-topbar-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 800;
+    font-size: 1.5rem;
+    color: var(--text-primary);
+    text-decoration: none;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    transform: translateX(-100%);
+    transition: transform var(--duration-base) var(--ease-out);
+    z-index: 101;
+    box-shadow: var(--shadow-floating);
+  }
+
+  .sidebar-open {
+    transform: translateX(0);
+  }
+
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 100;
+  }
+
+  .sidebar-close-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm);
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+  }
+
+  .sidebar-close-button:hover {
+    background: var(--surface-muted);
+    color: var(--text-primary);
+  }
 }
 
 /* Theme switch — sun/moon icons fixed in the track, knob slides between them. */
