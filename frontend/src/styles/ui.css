@@ -323,6 +323,31 @@
   color: var(--accent);
 }
 
+.sidebar-nav-item-group {
+  width: 100%;
+}
+
+.sidebar-chevron {
+  margin-left: auto;
+  transition: transform var(--duration-fast) ease;
+}
+
+.sidebar-chevron-open {
+  transform: rotate(180deg);
+}
+
+.sidebar-subgroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-left: 20px;
+  margin-top: 2px;
+}
+
+.sidebar-subgroup .sidebar-nav-item {
+  font-size: 1.3rem;
+}
+
 .sidebar-spacer {
   flex: 1;
 }
@@ -521,4 +546,10 @@
   background: transparent;
   border: 1px solid var(--danger);
   color: var(--danger);
+}
+
+.alert-success {
+  background: var(--success-bg);
+  border: 1px solid var(--success-text);
+  color: var(--success-text);
 }

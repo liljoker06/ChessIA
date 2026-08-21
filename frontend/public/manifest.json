@@ -1,0 +1,17 @@
+{
+  "name": "ChessIA",
+  "short_name": "ChessIA",
+  "description": "Une IA joue aux échecs toute seule, à regarder en direct.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#262421",
+  "theme_color": "#262421",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
