@@ -1,0 +1,86 @@
+/* Design tokens extracted for real from a Wayback Machine snapshot of
+   europe-echecs.com (Cloudflare blocks live scraping, the archive doesn't).
+   Values below are read straight from computed styles: body bg #061d2c,
+   text #dee2e6, gold accent #ffd30e, Bootstrap danger red #dc3545,
+   secondary blue #175781, system-ui font stack, Bootstrap-era 6-12px radii. */
+
+:root {
+  /* Dark navy is the site's actual default look, not a toggle-away option. */
+  --background: #061d2c;
+  --surface: #0f2740;
+  --surface-muted: #123049;
+  --text-primary: #eef2f5;
+  --text-muted: #8ea0af;
+  --accent: #ffd30e;
+  --accent-strong: #ffdd45;
+  --accent-text: #061d2c;
+  --secondary: #175781;
+  --secondary-strong: #1f6f9f;
+  --secondary-text: #ffffff;
+  --border: #1c3a52;
+  --border-subtle: #16324a;
+
+  --success-bg: #123425;
+  --success-text: #4caf6e;
+  --warning-bg: #3a2f0c;
+  --warning-text: #ffd30e;
+  --danger: #dc3545;
+  --info-bg: #0f2740;
+
+  --board-light: #ece3cf;
+  --board-dark: #175781;
+  --board-highlight: #ffd30e;
+  --board-check: #dc3545;
+
+  --shadow-subtle: 0 1px 3px rgba(0, 0, 0, 0.35);
+  --shadow-raised: 0 8px 20px rgba(0, 0, 0, 0.4);
+  --shadow-floating: 0 18px 44px rgba(0, 0, 0, 0.55);
+  --shadow-glow: 0 8px 24px rgba(255, 211, 14, 0.28);
+
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-pill: 999px;
+
+  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --font-display: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration-fast: 150ms;
+  --duration-base: 250ms;
+  --duration-slow: 400ms;
+}
+
+/* Light is the secondary, toggle-away option (not extracted — derived to stay legible). */
+:root[data-theme="light"] {
+  --background: #f4f7f9;
+  --surface: #ffffff;
+  --surface-muted: #e9eef2;
+  --text-primary: #0c1f2e;
+  --text-muted: #5b6b78;
+  --accent: #e0ac00;
+  --accent-strong: #c99700;
+  --accent-text: #061d2c;
+  --secondary: #175781;
+  --secondary-strong: #124366;
+  --secondary-text: #ffffff;
+  --border: #dbe3e8;
+  --border-subtle: #e8edf0;
+
+  --success-bg: #e4f5ea;
+  --success-text: #1e7a41;
+  --warning-bg: #fdf2d8;
+  --warning-text: #8a6600;
+  --danger: #c62838;
+  --info-bg: #eef4f8;
+
+  --board-light: #ece3cf;
+  --board-dark: #175781;
+  --board-highlight: #e0ac00;
+  --board-check: #c62838;
+
+  --shadow-subtle: 0 1px 3px rgba(12, 31, 46, 0.1);
+  --shadow-raised: 0 8px 20px rgba(12, 31, 46, 0.12);
+  --shadow-floating: 0 18px 44px rgba(12, 31, 46, 0.2);
+  --shadow-glow: 0 8px 24px rgba(224, 172, 0, 0.25);
+}

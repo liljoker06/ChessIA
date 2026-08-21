@@ -1,0 +1,104 @@
+.options-panel {
+  width: 100%;
+  max-width: 260px;
+}
+
+.options-panel h3 {
+  margin-bottom: 20px;
+}
+
+.options-section {
+  margin-bottom: 24px;
+}
+
+.options-section:last-child {
+  margin-bottom: 0;
+}
+
+.options-label {
+  display: block;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 12px;
+}
+
+.board-theme-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.board-swatch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 2px solid var(--border);
+  padding: 0;
+  cursor: pointer;
+  transition: border-color var(--duration-fast) ease, transform var(--duration-fast) var(--ease-out);
+}
+
+.board-swatch:hover {
+  transform: translateY(-2px);
+}
+
+.board-swatch-active {
+  border-color: var(--accent);
+}
+
+.board-swatch-square {
+  display: block;
+}
+
+.options-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  font-size: 1.25rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.options-toggle-row:last-child {
+  border-bottom: none;
+}
+
+.toggle-switch {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  width: 40px;
+  height: 22px;
+  padding: 2px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border);
+  background: var(--surface-muted);
+  cursor: pointer;
+  position: relative;
+}
+
+.toggle-switch-knob {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  transition: transform var(--duration-base) var(--ease-out), background-color var(--duration-fast) ease;
+}
+
+.toggle-switch[aria-checked="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.toggle-switch[aria-checked="true"] .toggle-switch-knob {
+  background: var(--accent-text);
+  transform: translateX(18px);
+}

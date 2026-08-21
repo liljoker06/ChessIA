@@ -1,0 +1,120 @@
+.chessboard {
+  display: flex;
+  flex-direction: column;
+  border: 4px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-raised);
+  width: min(640px, 92vw);
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+}
+
+.board-row {
+  display: flex;
+  flex: 1;
+}
+
+.board-square {
+  position: relative;
+  flex: 1;
+  aspect-ratio: 1 / 1;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color var(--duration-fast) ease;
+}
+
+.square-light {
+  background: var(--board-light);
+}
+
+.square-dark {
+  background: var(--board-dark);
+}
+
+.square-selected {
+  background: var(--board-highlight) !important;
+}
+
+.square-last-move::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--board-highlight);
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+.square-check {
+  box-shadow: inset 0 0 0 4px var(--board-check);
+}
+
+.piece {
+  font-size: min(9vw, 56px);
+  line-height: 1;
+  user-select: none;
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.board-square:hover .piece {
+  transform: scale(1.08);
+}
+
+.piece-w {
+  color: #fbf3d8;
+  -webkit-text-stroke: 1.5px #312e2b;
+  text-shadow: 0 2px 2px rgba(0, 0, 0, 0.35);
+}
+
+.piece-b {
+  color: #1a1714;
+  -webkit-text-stroke: 1px #1a1714;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.25);
+}
+
+.move-hint {
+  position: absolute;
+  width: 28%;
+  height: 28%;
+  border-radius: 50%;
+  background: rgba(49, 46, 43, 0.35);
+  pointer-events: none;
+}
+
+.move-hint-capture {
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: inset 0 0 0 5px var(--board-check);
+  opacity: 0.55;
+}
+
+.coord {
+  position: absolute;
+  font-size: 0.9rem;
+  font-weight: 700;
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.coord-rank {
+  top: 2px;
+  left: 4px;
+}
+
+.coord-file {
+  bottom: 2px;
+  right: 4px;
+}
+
+.square-light .coord {
+  color: var(--board-dark);
+}
+
+.square-dark .coord {
+  color: var(--board-light);
+}
