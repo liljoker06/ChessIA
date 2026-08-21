@@ -61,6 +61,12 @@
   text-align: center;
 }
 
+.section-title {
+  text-align: center;
+  font-size: 2.6rem;
+  margin-bottom: 24px;
+}
+
 .about-stack-list {
   display: flex;
   flex-wrap: wrap;

@@ -2,20 +2,21 @@ import { Chess, type Square, type PieceSymbol } from "chess.js";
 import { Pause, Play, RotateCcw } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ChessBoard } from "../components/ChessBoard";
-import { GameOptionsPanel } from "../components/GameOptionsPanel";
 import { DIFFICULTIES } from "../engine/difficulty";
 import { StockfishEngine } from "../engine/stockfishEngine";
 import { useGameSettings } from "../hooks/useGameSettings";
 import { BOARD_THEMES } from "../theme/boardThemes";
+import { PIECE_STYLES } from "../theme/pieceStyles";
 import "../styles/watch.css";
 
+// Both colors use the same (solid) glyph shapes, recolored via CSS.
 const PIECE_UNICODE: Record<string, string> = {
-  wp: "♙",
-  wn: "♘",
-  wb: "♗",
-  wr: "♖",
-  wq: "♕",
-  wk: "♔",
+  wp: "♟",
+  wn: "♞",
+  wb: "♝",
+  wr: "♜",
+  wq: "♛",
+  wk: "♚",
   bp: "♟",
   bn: "♞",
   bb: "♝",
@@ -40,13 +41,10 @@ function pieceValue(type: PieceSymbol): number {
   }
 }
 
-interface WatchProps {
-  showOptions: boolean;
-}
-
-export function Watch({ showOptions }: WatchProps) {
-  const { settings, update: updateSetting } = useGameSettings();
+export function Watch() {
+  const { settings } = useGameSettings();
   const boardTheme = BOARD_THEMES.find((t) => t.id === settings.boardThemeId) ?? BOARD_THEMES[0];
+  const pieceStyle = PIECE_STYLES.find((p) => p.id === settings.pieceStyleId) ?? PIECE_STYLES[0];
 
   const gameRef = useRef(new Chess());
   const whiteEngineRef = useRef<StockfishEngine | null>(null);
@@ -177,8 +175,6 @@ export function Watch({ showOptions }: WatchProps) {
   return (
     <div className="watch-page">
       <div className="watch-layout">
-        {showOptions && <GameOptionsPanel settings={settings} onChange={updateSetting} />}
-
         <div className="board-column">
           <div className="card match-controls">
             <div className="difficulty-picker">
@@ -231,6 +227,7 @@ export function Watch({ showOptions }: WatchProps) {
             orientation={orientation}
             disabled
             theme={boardTheme}
+            pieceStyle={pieceStyle}
             showCoordinates={settings.showCoordinates}
             highlightLastMove={settings.highlightLastMove}
           />

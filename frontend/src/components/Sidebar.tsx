@@ -1,17 +1,33 @@
-import { Home, Info, LogIn, LogOut, Maximize, Minimize, Moon, SlidersHorizontal, Sun, Swords, UserPlus, X } from "lucide-react";
+import {
+  BarChart3,
+  Bot,
+  ChevronDown,
+  History,
+  Home,
+  Info,
+  LogIn,
+  LogOut,
+  Maximize,
+  Minimize,
+  Moon,
+  Puzzle,
+  SlidersHorizontal,
+  Sun,
+  Swords,
+  UserPlus,
+  X,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 
 interface SidebarProps {
-  showOptions: boolean;
-  onToggleOptions: () => void;
   mobileOpen: boolean;
   onClose: () => void;
 }
 
-export function Sidebar({ showOptions, onToggleOptions, mobileOpen, onClose }: SidebarProps) {
+export function Sidebar({ mobileOpen, onClose }: SidebarProps) {
   const { theme, toggleTheme } = useTheme();
   const { user, logout } = useAuth();
   const location = useLocation();
@@ -39,6 +55,8 @@ export function Sidebar({ showOptions, onToggleOptions, mobileOpen, onClose }: S
   };
 
   const isOnGamePage = location.pathname === "/partie";
+  const isOnHistoryGroup = location.pathname === "/historique" || location.pathname === "/statistiques";
+  const [historyExpanded, setHistoryExpanded] = useState(isOnHistoryGroup);
 
   const handleLogout = () => {
     logout();
@@ -79,6 +97,60 @@ export function Sidebar({ showOptions, onToggleOptions, mobileOpen, onClose }: S
             <span>Regarder</span>
           </Link>
           <Link
+            to="/bots"
+            className={`sidebar-nav-item ${location.pathname === "/bots" ? "sidebar-nav-item-active" : ""}`}
+            onClick={onClose}
+          >
+            <Bot size={20} />
+            <span>Bots</span>
+          </Link>
+          <Link
+            to="/puzzles"
+            className={`sidebar-nav-item ${location.pathname === "/puzzles" ? "sidebar-nav-item-active" : ""}`}
+            onClick={onClose}
+          >
+            <Puzzle size={20} />
+            <span>Puzzles</span>
+          </Link>
+          <button
+            type="button"
+            className={`sidebar-nav-item sidebar-nav-item-group ${isOnHistoryGroup ? "sidebar-nav-item-active" : ""}`}
+            onClick={() => setHistoryExpanded((v) => !v)}
+            aria-expanded={historyExpanded}
+          >
+            <History size={20} />
+            <span>Historique</span>
+            <ChevronDown size={16} className={`sidebar-chevron ${historyExpanded ? "sidebar-chevron-open" : ""}`} />
+          </button>
+          {historyExpanded && (
+            <div className="sidebar-subgroup">
+              <Link
+                to="/statistiques"
+                className={`sidebar-nav-item ${location.pathname === "/statistiques" ? "sidebar-nav-item-active" : ""}`}
+                onClick={onClose}
+              >
+                <BarChart3 size={18} />
+                <span>Statistiques</span>
+              </Link>
+              <Link
+                to="/historique"
+                className={`sidebar-nav-item ${location.pathname === "/historique" ? "sidebar-nav-item-active" : ""}`}
+                onClick={onClose}
+              >
+                <History size={18} />
+                <span>Historique des parties</span>
+              </Link>
+            </div>
+          )}
+          <Link
+            to="/parametres"
+            className={`sidebar-nav-item ${location.pathname === "/parametres" ? "sidebar-nav-item-active" : ""}`}
+            onClick={onClose}
+          >
+            <SlidersHorizontal size={20} />
+            <span>Paramètres</span>
+          </Link>
+          <Link
             to="/apropos"
             className={`sidebar-nav-item ${location.pathname === "/apropos" ? "sidebar-nav-item-active" : ""}`}
             onClick={onClose}
@@ -87,32 +159,18 @@ export function Sidebar({ showOptions, onToggleOptions, mobileOpen, onClose }: S
             <span>À propos</span>
           </Link>
           {isOnGamePage && (
-            <>
-              <button
-                type="button"
-                className={`sidebar-nav-item ${showOptions ? "sidebar-nav-item-active" : ""}`}
-                onClick={() => {
-                  onToggleOptions();
-                  onClose();
-                }}
-                aria-pressed={showOptions}
-              >
-                <SlidersHorizontal size={20} />
-                <span>Options</span>
-              </button>
-              <button
-                type="button"
-                className="sidebar-nav-item"
-                onClick={() => {
-                  toggleFullscreen();
-                  onClose();
-                }}
-                aria-pressed={isFullscreen}
-              >
-                {isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
-                <span>{isFullscreen ? "Quitter le plein écran" : "Plein écran"}</span>
-              </button>
-            </>
+            <button
+              type="button"
+              className="sidebar-nav-item"
+              onClick={() => {
+                toggleFullscreen();
+                onClose();
+              }}
+              aria-pressed={isFullscreen}
+            >
+              {isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
+              <span>{isFullscreen ? "Quitter le plein écran" : "Plein écran"}</span>
+            </button>
           )}
         </nav>
 
