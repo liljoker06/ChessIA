@@ -78,18 +78,6 @@ export function Sidebar({ showOptions, onToggleOptions, mobileOpen, onClose }: S
             <Swords size={20} />
             <span>Regarder</span>
           </Link>
-          <button
-            type="button"
-            className={`sidebar-nav-item ${showOptions ? "sidebar-nav-item-active" : ""}`}
-            onClick={() => {
-              onToggleOptions();
-              onClose();
-            }}
-            aria-pressed={showOptions}
-          >
-            <SlidersHorizontal size={20} />
-            <span>Options</span>
-          </button>
           <Link
             to="/apropos"
             className={`sidebar-nav-item ${location.pathname === "/apropos" ? "sidebar-nav-item-active" : ""}`}
@@ -99,18 +87,32 @@ export function Sidebar({ showOptions, onToggleOptions, mobileOpen, onClose }: S
             <span>À propos</span>
           </Link>
           {isOnGamePage && (
-            <button
-              type="button"
-              className="sidebar-nav-item"
-              onClick={() => {
-                toggleFullscreen();
-                onClose();
-              }}
-              aria-pressed={isFullscreen}
-            >
-              {isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
-              <span>{isFullscreen ? "Quitter le plein écran" : "Plein écran"}</span>
-            </button>
+            <>
+              <button
+                type="button"
+                className={`sidebar-nav-item ${showOptions ? "sidebar-nav-item-active" : ""}`}
+                onClick={() => {
+                  onToggleOptions();
+                  onClose();
+                }}
+                aria-pressed={showOptions}
+              >
+                <SlidersHorizontal size={20} />
+                <span>Options</span>
+              </button>
+              <button
+                type="button"
+                className="sidebar-nav-item"
+                onClick={() => {
+                  toggleFullscreen();
+                  onClose();
+                }}
+                aria-pressed={isFullscreen}
+              >
+                {isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
+                <span>{isFullscreen ? "Quitter le plein écran" : "Plein écran"}</span>
+              </button>
+            </>
           )}
         </nav>
 
