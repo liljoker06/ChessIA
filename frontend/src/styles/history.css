@@ -1,0 +1,273 @@
+.history-page {
+  flex: 1;
+  padding: 32px 24px 64px;
+  max-width: 980px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.history-subtitle {
+  color: var(--text-muted);
+  margin-bottom: 32px;
+}
+
+.history-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+@media (max-width: 600px) {
+  .history-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.history-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 20px;
+}
+
+.history-stat-value {
+  font-size: 2.6rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.history-stat-label {
+  color: var(--text-muted);
+  font-size: 1.2rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.history-row-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.history-row {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 24px 32px;
+}
+
+.history-row-thumb {
+  width: 120px;
+  flex-shrink: 0;
+}
+
+.history-row-thumb .chessboard {
+  width: 100%;
+  border-width: 2px;
+}
+
+.history-row-mode {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  width: 64px;
+  flex-shrink: 0;
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.history-row-mode-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.history-row-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.history-row-player {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 1.5rem;
+  font-weight: 600;
+  padding: 6px 0;
+}
+
+.history-row-meta {
+  color: var(--text-muted);
+  font-size: 1.2rem;
+  margin: 12px 0 0;
+}
+
+.history-row-rating {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.history-rating-up {
+  color: var(--success-text);
+}
+
+.history-rating-down {
+  color: var(--danger);
+}
+
+.history-row-accuracy {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 26px;
+  width: 40px;
+  flex-shrink: 0;
+  color: var(--text-muted);
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.history-score {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  font-size: 1.3rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.history-score-win {
+  background: var(--success-bg);
+  color: var(--success-text);
+}
+
+.history-score-loss {
+  background: transparent;
+  color: var(--danger);
+  border: 1px solid var(--danger);
+}
+
+.history-score-draw {
+  background: var(--surface-muted);
+  color: var(--text-muted);
+}
+
+.history-row-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.history-row-date {
+  color: var(--text-muted);
+  font-size: 1.2rem;
+}
+
+.history-row-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.history-action-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background-color var(--duration-fast) ease, color var(--duration-fast) ease;
+}
+
+.history-action-button:hover {
+  background: var(--surface-muted);
+  color: var(--text-primary);
+}
+
+.history-action-button-active {
+  color: var(--danger);
+}
+
+.history-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.history-toolbar-tabs {
+  display: flex;
+  gap: 8px;
+}
+
+.history-toolbar-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 1.2rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.history-toolbar-tab:hover {
+  color: var(--text-primary);
+}
+
+.history-toolbar-tab-active {
+  background: var(--surface-muted);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.history-sort-select {
+  width: auto;
+  padding: 8px 16px;
+}
+
+@media (max-width: 700px) {
+  .history-row {
+    flex-wrap: wrap;
+    padding: 16px 20px;
+  }
+
+  .history-row-mode {
+    flex-direction: row;
+    width: auto;
+  }
+
+  .history-row-accuracy {
+    display: none;
+  }
+
+  .history-row-side {
+    order: 1;
+    width: 100%;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding-left: 0;
+  }
+}

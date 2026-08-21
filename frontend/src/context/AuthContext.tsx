@@ -11,12 +11,14 @@ interface StoredUser {
   username: string;
   email: string;
   password: string;
+  bio: string;
 }
 
 export interface AuthUser {
   id: string;
   username: string;
   email: string;
+  bio: string;
 }
 
 interface AuthContextValue {
@@ -24,6 +26,8 @@ interface AuthContextValue {
   login: (email: string, password: string, remember?: boolean) => Promise<void>;
   signup: (username: string, email: string, password: string) => Promise<void>;
   logout: () => void;
+  updateProfile: (bio: string) => void;
+  changePassword: (currentPassword: string, newPassword: string) => void;
 }
 
 const USERS_KEY = "chess-users";
@@ -44,7 +48,7 @@ function writeUsers(users: StoredUser[]) {
 }
 
 function toPublicUser(u: StoredUser): AuthUser {
-  return { id: u.id, username: u.username, email: u.email };
+  return { id: u.id, username: u.username, email: u.email, bio: u.bio ?? "" };
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -82,6 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       username: username.trim(),
       email: normalizedEmail,
       password,
+      bio: "",
     };
     writeUsers([...users, newUser]);
     localStorage.setItem(SESSION_KEY, newUser.id);
@@ -94,7 +99,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   };
 
-  return <AuthContext.Provider value={{ user, login, signup, logout }}>{children}</AuthContext.Provider>;
+  const updateProfile = (bio: string) => {
+    setUser((current) => {
+      if (!current) return current;
+      const users = readUsers();
+      const updated = users.map((u) => (u.id === current.id ? { ...u, bio } : u));
+      writeUsers(updated);
+      return { ...current, bio };
+    });
+  };
+
+  const changePassword = (currentPassword: string, newPassword: string) => {
+    if (!user) throw new Error("Non connecté.");
+    const users = readUsers();
+    const found = users.find((u) => u.id === user.id);
+    if (!found || found.password !== currentPassword) {
+      throw new Error("Mot de passe actuel incorrect.");
+    }
+    writeUsers(users.map((u) => (u.id === user.id ? { ...u, password: newPassword } : u)));
+  };
+
+  return (
+    <AuthContext.Provider value={{ user, login, signup, logout, updateProfile, changePassword }}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {

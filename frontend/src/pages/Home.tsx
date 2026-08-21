@@ -1,89 +1,157 @@
+import { Chess } from "chess.js";
+import { Download } from "lucide-react";
 import { Link } from "react-router-dom";
+import { ChessBoard } from "../components/ChessBoard";
+import { useInstallPrompt } from "../hooks/useInstallPrompt";
+import { BOARD_THEMES, DEFAULT_BOARD_THEME_ID } from "../theme/boardThemes";
 import "../styles/home.css";
 
-const STEPS = [
-  {
-    number: "1",
-    title: "Le moteur calcule",
-    text: "Stockfish évalue la position et choisit le meilleur coup selon le niveau de difficulté choisi.",
-  },
-  {
-    number: "2",
-    title: "Le coup est joué",
-    text: "L'échiquier se met à jour automatiquement, sans qu'aucune interaction ne soit nécessaire.",
-  },
-  {
-    number: "3",
-    title: "Tu regardes en direct",
-    text: "Chaque coup s'ajoute à l'historique en notation algébrique, jusqu'à la fin de la partie.",
-  },
-];
+const boardTheme = BOARD_THEMES.find((t) => t.id === DEFAULT_BOARD_THEME_ID) ?? BOARD_THEMES[0];
+const watchPreviewGame = new Chess();
 
 export function Home() {
+  const { canInstall, installed, promptInstall } = useInstallPrompt();
+
   return (
     <div className="home-page">
       <section className="hero">
-        <span className="hero-badge">
-          <span className="live-dot" />
-          En direct
-        </span>
-        <h1>
-          Une IA joue aux échecs. <em>Toute seule.</em>
-        </h1>
-        <p className="hero-subtitle">
-          Un moteur d'échecs joue une partie complète en ligne, coup après coup, sans interruption.
-          Tu regardes, en direct.
-        </p>
+        <div className="hero-media">
+          <video className="hero-video" autoPlay muted loop playsInline>
+            <source
+              src="https://assets-configurator.chess.com/video/configurator/hero_1780586045036.webm"
+              type="video/webm"
+            />
+          </video>
+        </div>
+
+        <div className="hero-content">
+          <h1>
+            Une IA joue aux échecs. <em>Toute seule.</em>
+          </h1>
+          <p className="hero-subtitle">
+            Un moteur d'échecs joue une partie complète en ligne, coup après coup, sans interruption.
+            Tu regardes, en direct.
+          </p>
+        </div>
+      </section>
+
+      <section className="feature-section">
+        <div className="feature-media">
+          <ChessBoard
+            board={watchPreviewGame.board()}
+            selected={null}
+            legalTargets={[]}
+            lastMove={null}
+            checkSquare={null}
+            orientation="w"
+            disabled
+            theme={boardTheme}
+            showCoordinates={false}
+            highlightLastMove={false}
+          />
+        </div>
+        <div className="feature-text">
+          <h2>Regarde l'IA jouer</h2>
+          <p>Une partie complète, jouée en direct par le moteur, coup après coup, sans que tu n'aies rien à faire.</p>
+          <Link to="/partie" className="btn btn-secondary">
+            Regarder la partie
+          </Link>
+        </div>
+      </section>
+
+      <section className="feature-section feature-section-reverse">
+        <div className="feature-media">
+          <img
+            src="https://assets-configurator.chess.com/image/configurator/bots_1765899028922.webp"
+            alt="Personnalités de bots"
+          />
+        </div>
+        <div className="feature-text">
+          <h2>Affronte un bot</h2>
+          <p>Choisis ton camp et un niveau de difficulté, puis joue toi-même contre le moteur Stockfish.</p>
+          <Link to="/bots" className="btn btn-secondary">
+            Défier un bot
+          </Link>
+        </div>
+      </section>
+
+      <section className="feature-section">
+        <div className="feature-media">
+          <img
+            src="https://assets-configurator.chess.com/image/configurator/puzzles_1765899040725.webp"
+            alt="Illustration d'un puzzle d'échecs"
+          />
+        </div>
+        <div className="feature-text">
+          <h2>Muscle-toi avec des puzzles</h2>
+          <p>Une petite série de tactiques (mats, pièces à gagner) à résoudre directement sur l'échiquier.</p>
+          <Link to="/puzzles" className="btn btn-secondary">
+            Résoudre un puzzle
+          </Link>
+        </div>
+      </section>
+
+      <section className="feature-section feature-section-reverse">
+        <div className="feature-media">
+          <div className="phone-mockup">
+            <div className="phone-mockup-notch" />
+            <div className="phone-mockup-screen">
+              <span className="phone-mockup-brand">
+                <span className="sidebar-brand-icon">♞</span>
+                ChessIA
+              </span>
+              <div className="phone-mockup-board" />
+            </div>
+          </div>
+        </div>
+        <div className="feature-text">
+          <h2>Installe ChessIA</h2>
+          {installed ? (
+            <p>ChessIA est installé sur cet appareil.</p>
+          ) : (
+            <>
+              <p>Ajoute ChessIA à ton écran d'accueil pour l'ouvrir comme une application, en un geste.</p>
+              {canInstall ? (
+                <button className="btn btn-secondary" onClick={promptInstall}>
+                  <Download size={18} />
+                  Installer
+                </button>
+              ) : (
+                <p className="feature-text-hint">
+                  Depuis le menu de ton navigateur, choisis « Ajouter à l'écran d'accueil » ou « Installer
+                  l'application ».
+                </p>
+              )}
+            </>
+          )}
+        </div>
+      </section>
+
+      <section className="cta-banner">
+        <h2>Prêt à commencer ?</h2>
         <Link to="/partie" className="btn btn-primary btn-lg">
           Regarder la partie
         </Link>
-        <div className="hero-badges">
-          <span className="badge">Moteur Stockfish 18</span>
-          <span className="badge">4 niveaux de difficulté</span>
-          <span className="badge">Historique en direct</span>
-        </div>
-      </section>
-
-      <section className="steps">
-        <div className="steps-inner">
-          <h2 className="section-title">Comment ça marche</h2>
-          <div className="steps-grid">
-            {STEPS.map((s) => (
-              <div className="step-card" key={s.number}>
-                <div className="step-number">{s.number}</div>
-                <h3>{s.title}</h3>
-                <p>{s.text}</p>
-              </div>
-            ))}
-          </div>
-        </div>
       </section>
 
       <footer className="footer">
-        <div className="footer-inner">
-          <div>
-            <div className="footer-brand">
-              <span className="footer-brand-icon">♞</span>
-              ChessIA
-            </div>
-            <p className="footer-tagline">Un moteur d'échecs qui joue tout seul, à regarder en direct.</p>
-          </div>
-
-          <div className="footer-links">
-            <div className="footer-col">
-              <h4>Navigation</h4>
-              <Link to="/">Accueil</Link>
-              <Link to="/partie">Regarder la partie</Link>
-              <Link to="/apropos">À propos</Link>
-            </div>
-            <div className="footer-col">
-              <h4>Compte</h4>
-              <Link to="/login">Connexion</Link>
-              <Link to="/signup">Inscription</Link>
-            </div>
-          </div>
-        </div>
-        <p className="footer-bottom">ChessIA — projet personnel.</p>
+        <nav className="footer-links-row">
+          <Link to="/">Accueil</Link>
+          <span className="footer-dot">•</span>
+          <Link to="/partie">Regarder la partie</Link>
+          <span className="footer-dot">•</span>
+          <Link to="/bots">Bots</Link>
+          <span className="footer-dot">•</span>
+          <Link to="/puzzles">Puzzles</Link>
+          <span className="footer-dot">•</span>
+          <Link to="/apropos">À propos</Link>
+          <span className="footer-dot">•</span>
+          <Link to="/login">Connexion</Link>
+          <span className="footer-dot">•</span>
+          <Link to="/signup">Inscription</Link>
+          <span className="footer-dot">•</span>
+          <span>ChessIA, projet personnel © 2026</span>
+        </nav>
       </footer>
     </div>
   );
