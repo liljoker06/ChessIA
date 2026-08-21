@@ -280,14 +280,53 @@
 }
 
 @media (max-width: 700px) {
+  .history-page {
+    padding: 24px 16px 56px;
+  }
+
+  .history-toolbar {
+    align-items: stretch;
+  }
+
+  .history-toolbar-tabs {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .history-toolbar-tab,
+  .history-sort-select {
+    width: 100%;
+  }
+
   .history-row {
     flex-wrap: wrap;
-    padding: 16px 20px;
+    gap: 16px;
+    padding: 16px 16px 18px;
+  }
+
+  .history-row-thumb {
+    width: 100%;
+    max-width: 180px;
+    margin: 0 auto;
   }
 
   .history-row-mode {
     flex-direction: row;
-    width: auto;
+    width: 100%;
+    justify-content: center;
+    gap: 12px;
+  }
+
+  .history-row-main {
+    width: 100%;
+  }
+
+  .history-row-player {
+    font-size: 1.3rem;
+  }
+
+  .history-row-meta {
+    margin-top: 8px;
   }
 
   .history-row-accuracy {
@@ -301,5 +340,28 @@
     align-items: center;
     justify-content: space-between;
     padding-left: 0;
+  }
+}
+
+@media (max-width: 520px) {
+  .history-row {
+    padding: 14px 14px 16px;
+  }
+
+  .history-row-player {
+    font-size: 1.2rem;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .history-row-side {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .history-row-actions {
+    width: 100%;
+    justify-content: flex-end;
   }
 }
