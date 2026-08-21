@@ -1,2 +1,8 @@
 data/*.pgn.zst
 data/*.pgn
+data/venv/
+data/processed/
+.env
+training/output/
+training/venv/
+eval/results/
