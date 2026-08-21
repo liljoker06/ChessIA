@@ -1,10 +1,12 @@
 import { Chess } from "chess.js";
 import { Bot, Clock, Download, Heart, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChessBoard } from "../components/ChessBoard";
 import { SAMPLE_GAMES, useGameHistory, type HistoryGame } from "../hooks/useGameHistory";
 import { BOARD_THEMES, DEFAULT_BOARD_THEME_ID } from "../theme/boardThemes";
 import "../styles/history.css";
+
+import { useAuth } from "../context/AuthContext"; 
 
 type SortOrder = "desc" | "asc";
 type FilterTab = "all" | "favorites";
@@ -59,7 +61,21 @@ function hashSeed(text: string): number {
 
 // Illustrative only — decorative rating/accuracy numbers to match a familiar layout.
 // There's no real rating or move-analysis system behind these.
-function illustrativeStats(game: HistoryGame) {
+function illustrativeStats(game: any) {
+  // Si on a  les vraies stats Lichess, on les retourne 
+  if (game.realStats) {
+    return {
+      playerRating: game.realStats.playerRating,
+      aiRating: game.realStats.aiRating,
+      playerDelta: game.realStats.playerDelta,
+      aiDelta: game.realStats.aiDelta,
+      playerAccuracy: "-", 
+      aiAccuracy: "-",
+      timeControl: game.realStats.timeControl,
+    };
+  }
+
+  // Comportement par défaut (fake) pour les parties locales sans Lichess
   const seed = hashSeed(game.id);
   const aiRating = DIFFICULTY_BASE_RATING[game.difficulty] ?? 1200;
   const playerRating = 900 + (seed % 500);
@@ -67,6 +83,7 @@ function illustrativeStats(game: HistoryGame) {
   const playerDelta = game.result === "win" ? delta : game.result === "loss" ? -delta : Math.round(delta / 4);
   const aiDelta = -playerDelta;
   const accSeed = hashSeed(`${game.id}-acc`);
+  
   return {
     playerRating,
     aiRating,
@@ -93,10 +110,9 @@ const boardTheme = BOARD_THEMES.find((t) => t.id === DEFAULT_BOARD_THEME_ID) ?? 
 interface HistoryRowProps {
   game: HistoryGame;
   onToggleFavorite: () => void;
-  onDelete: () => void;
 }
 
-function HistoryRow({ game, onToggleFavorite, onDelete }: HistoryRowProps) {
+function HistoryRow({ game, onToggleFavorite }: HistoryRowProps) {
   const finalPosition = new Chess(game.finalFen);
   const stats = illustrativeStats(game);
 
@@ -185,9 +201,6 @@ function HistoryRow({ game, onToggleFavorite, onDelete }: HistoryRowProps) {
           <button className="history-action-button" onClick={() => downloadPgn(game)} title="Télécharger le PGN">
             <Download size={16} />
           </button>
-          <button className="history-action-button" onClick={onDelete} title="Supprimer cette partie">
-            <Trash2 size={16} />
-          </button>
         </div>
       </div>
     </div>
@@ -195,11 +208,72 @@ function HistoryRow({ game, onToggleFavorite, onDelete }: HistoryRowProps) {
 }
 
 export function History() {
-  const { games: realGames, toggleFavorite, deleteGame } = useGameHistory();
+  const { games: localGames, toggleFavorite } = useGameHistory();
+  const { user } = useAuth(); 
+  
+  const [lichessGames, setLichessGames] = useState<HistoryGame[]>([]);
+  const [loadingLichess, setLoadingLichess] = useState(false);
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const [filter, setFilter] = useState<FilterTab>("all");
+const lichessFetchStarted = useRef(false);
 
-  const games = realGames.length > 0 ? realGames : SAMPLE_GAMES;
+useEffect(() => {
+  if (!user?.isLichess) return;
+
+  // Empêche le double appel en développement avec React StrictMode
+  if (lichessFetchStarted.current) {
+    console.log("appel déjà fait, skip");
+    return;
+  }
+
+  lichessFetchStarted.current = true;
+
+  const fetchLichessHistory = async () => {
+    setLoadingLichess(true);
+
+    try {
+      const token = localStorage.getItem("chess-api-token");
+      const API_URL = import.meta.env.VITE_API_URL;
+
+      const res = await fetch(
+        `${API_URL}/api/bot/games?limit=20`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (res.ok) {
+        const data = await res.json();
+
+        const adapted = data.games.map((g: any) =>
+          adaptLichessGame(g, user.username)
+        );
+
+        setLichessGames(adapted);
+      } else {
+        console.error(
+          "Erreur API historique:",
+          res.status,
+          await res.text()
+        );
+      }
+    } catch (err) {
+      console.error("Erreur chargement parties Lichess:", err);
+    } finally {
+      setLoadingLichess(false);
+    }
+  };
+
+  fetchLichessHistory();
+}, [user?.isLichess, user?.username]);
+
+  // si user connecté, prendre vrais données sinon les locales/samples
+  const games = user?.isLichess 
+    ? lichessGames 
+    : (localGames.length > 0 ? localGames : SAMPLE_GAMES);
+
   const favoriteCount = games.filter((g) => g.favorite).length;
   const filtered = filter === "favorites" ? games.filter((g) => g.favorite) : games;
   const sorted = [...filtered].sort((a, b) => (sortOrder === "desc" ? b.date - a.date : a.date - b.date));
@@ -207,7 +281,11 @@ export function History() {
   return (
     <div className="history-page">
       <h1>Historique des parties</h1>
-      <p className="history-subtitle">Tes parties jouées contre les bots, enregistrées sur cet appareil.</p>
+      <p className="history-subtitle">
+        {user?.isLichess 
+          ? `Parties officielles de ${user.username} sur Lichess.` 
+          : "Tes parties jouées contre les bots, enregistrées sur cet appareil."}
+      </p>
 
       <div className="history-toolbar">
         <div className="history-toolbar-tabs">
@@ -234,9 +312,13 @@ export function History() {
         </select>
       </div>
 
-      {sorted.length === 0 ? (
+      {loadingLichess ? (
         <div className="card">
-          <p>Aucune partie mise en favori.</p>
+          <p>Chargement des parties depuis Lichess...</p>
+        </div>
+      ) : sorted.length === 0 ? (
+        <div className="card">
+          <p>Aucune partie trouvée.</p>
         </div>
       ) : (
         <div className="history-row-list">
@@ -245,11 +327,58 @@ export function History() {
               key={g.id}
               game={g}
               onToggleFavorite={() => toggleFavorite(g.id)}
-              onDelete={() => deleteGame(g.id)}
             />
           ))}
         </div>
       )}
     </div>
   );
+}
+
+// transforme une partie Lichess brute en format HistoryGame
+function adaptLichessGame(lichessGame: any, currentUsername: string): HistoryGame & { realStats?: any } {
+  // couleur (pseudo noir ou blanc)
+  const blackName = lichessGame.players?.black?.user?.name || "";
+  const isWhite = blackName.toLowerCase() !== currentUsername.toLowerCase();
+  const playerColor = isWhite ? "white" : "black";
+  
+  // vrai gagnant
+  let result: "win" | "loss" | "draw" = "draw";
+  if (lichessGame.winner) {
+    result = lichessGame.winner === playerColor ? "win" : "loss";
+  }
+
+  //  calcul le nombre de coups (Lichess donne une chaîne "e4 e5 Nf3...")
+  const moveArray = lichessGame.moves ? lichessGame.moves.trim().split(" ") : [];
+  const moveCount = Math.ceil(moveArray.length / 2);
+
+  // extract des vrais joueurs et Elos
+  const myStats = lichessGame.players[playerColor];
+  const oppStats = lichessGame.players[playerColor === "white" ? "black" : "white"];
+  const aiName = oppStats?.user?.name || (oppStats?.aiLevel ? `IA Lichess (Lvl ${oppStats.aiLevel})` : "Adversaire");
+  
+  //Format temps
+  const timeControl = lichessGame.clock ? `${lichessGame.clock.initial / 60} min` : "Classique";
+
+  return {
+    id: lichessGame.id,
+    date: lichessGame.createdAt || Date.now(),
+    finalFen: lichessGame.fen || "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+    playerColor: playerColor,
+    result: result,
+    moveCount: moveCount,
+    firstMoveSan: moveArray[0] || "", 
+    status: lichessGame.status || "completed",
+    difficulty: aiName,
+    pgn: lichessGame.pgn || "",
+    favorite: false,
+    
+    realStats: {
+      playerRating: myStats?.rating || "?",
+      aiRating: oppStats?.rating || "?",
+      playerDelta: myStats?.ratingDiff || 0,
+      aiDelta: oppStats?.ratingDiff || 0,
+      timeControl: timeControl,
+    }
+  } as any;
 }
