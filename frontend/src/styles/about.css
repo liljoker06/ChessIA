@@ -1,0 +1,69 @@
+.about-page {
+  flex: 1;
+  padding: 48px 24px 64px;
+  max-width: 900px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.about-hero {
+  text-align: center;
+  margin-bottom: 48px;
+}
+
+.about-hero h1 {
+  font-size: 3.6rem;
+  margin-bottom: 12px;
+}
+
+.about-subtitle {
+  color: var(--text-muted);
+  font-size: 1.5rem;
+  max-width: 560px;
+  margin: 0 auto;
+}
+
+.about-points {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-bottom: 56px;
+}
+
+@media (max-width: 800px) {
+  .about-points {
+    grid-template-columns: 1fr;
+  }
+}
+
+.about-point h3 {
+  margin-bottom: 8px;
+}
+
+.about-point p {
+  color: var(--text-muted);
+  margin-bottom: 0;
+}
+
+.about-point-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-muted);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.about-stack {
+  text-align: center;
+}
+
+.about-stack-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+}

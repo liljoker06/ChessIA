@@ -1,0 +1,80 @@
+/* Dark theme: chess.com's real look (near-black warm gray + green accent) — the default. */
+:root {
+  --background: #262421;
+  --surface: #2e2b27;
+  --surface-muted: #3a3530;
+  --text-primary: #f5f3ef;
+  --text-muted: #b0a89d;
+  --accent: #81b64c;
+  --accent-strong: #6aab3a;
+  --accent-text: #ffffff;
+  --secondary: #3a3530;
+  --secondary-strong: #46403a;
+  --secondary-text: #ffffff;
+  --border: #3d3a35;
+  --border-subtle: #34302b;
+
+  --success-bg: #1e3a1a;
+  --success-text: #81b64c;
+  --warning-bg: #3a2f0c;
+  --warning-text: #e0ac00;
+  --danger: #e0524a;
+  --info-bg: #2e2b27;
+
+  --board-light: #ebecd0;
+  --board-dark: #779556;
+  --board-highlight: #f6f682;
+  --board-check: #e0524a;
+
+  --shadow-subtle: 0 1px 3px rgba(0, 0, 0, 0.35);
+  --shadow-raised: 0 8px 20px rgba(0, 0, 0, 0.4);
+  --shadow-floating: 0 18px 44px rgba(0, 0, 0, 0.55);
+  --shadow-glow: 0 8px 24px rgba(129, 182, 76, 0.3);
+
+  --radius-sm: 3px;
+  --radius-md: 8px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+
+  --font-body: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", sans-serif;
+  --font-display: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", sans-serif;
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration-fast: 150ms;
+  --duration-base: 250ms;
+  --duration-slow: 400ms;
+}
+
+/* Light is our own alternate look (chess.com's real UI is dark-only) — kept for people who prefer it. */
+:root[data-theme="light"] {
+  --background: #ffffff;
+  --surface: #ffffff;
+  --surface-muted: #f0f1ed;
+  --text-primary: #1b1a17;
+  --text-muted: #6b6b68;
+  --accent: #81b64c;
+  --accent-strong: #6aab3a;
+  --accent-text: #ffffff;
+  --secondary: #e8e8e4;
+  --secondary-strong: #dcdcd7;
+  --secondary-text: #1b1a17;
+  --border: #d8d8d3;
+  --border-subtle: #e8e8e4;
+
+  --success-bg: #eafff0;
+  --success-text: #2f7a1e;
+  --warning-bg: #fdf2d8;
+  --warning-text: #8a6600;
+  --danger: #c62838;
+  --info-bg: #eafff0;
+
+  --board-light: #ebecd0;
+  --board-dark: #779556;
+  --board-highlight: #c8dc7a;
+  --board-check: #c62838;
+
+  --shadow-subtle: 0 1px 3px rgba(27, 26, 23, 0.1);
+  --shadow-raised: 0 8px 20px rgba(27, 26, 23, 0.12);
+  --shadow-floating: 0 18px 44px rgba(27, 26, 23, 0.2);
+  --shadow-glow: 0 8px 24px rgba(129, 182, 76, 0.25);
+}
