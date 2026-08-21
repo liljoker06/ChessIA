@@ -12,6 +12,7 @@ interface StoredUser {
   email: string;
   password: string;
   bio: string;
+  createdAt: number;
 }
 
 export interface AuthUser {
@@ -19,6 +20,7 @@ export interface AuthUser {
   username: string;
   email: string;
   bio: string;
+  createdAt: number;
 }
 
 interface AuthContextValue {
@@ -48,7 +50,7 @@ function writeUsers(users: StoredUser[]) {
 }
 
 function toPublicUser(u: StoredUser): AuthUser {
-  return { id: u.id, username: u.username, email: u.email, bio: u.bio ?? "" };
+  return { id: u.id, username: u.username, email: u.email, bio: u.bio ?? "", createdAt: u.createdAt ?? Date.now() };
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -87,6 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email: normalizedEmail,
       password,
       bio: "",
+      createdAt: Date.now(),
     };
     writeUsers([...users, newUser]);
     localStorage.setItem(SESSION_KEY, newUser.id);
