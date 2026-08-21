@@ -281,8 +281,34 @@ function ProfileSettings() {
   const { user, updateProfile } = useAuth();
   const [bio, setBio] = useState(user?.bio ?? "");
   const [justSaved, setJustSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [profileRedirectArmed, setProfileRedirectArmed] = useState(false);
 
   const dirty = bio !== (user?.bio ?? "");
+
+  function handleSaveProfile() {
+    if (user?.isLichess) {
+      if (!profileRedirectArmed) {
+        setError("Les modifications du profil Lichess se font uniquement sur le site officiel. Reclique pour ouvrir la page.");
+        setJustSaved(false);
+        setProfileRedirectArmed(true);
+        return;
+      }
+
+      window.open("https://lichess.org/account/profile", "_blank", "noopener,noreferrer");
+      setProfileRedirectArmed(false);
+      return;
+    }
+
+    try {
+      updateProfile(bio);
+      setError(null);
+      setJustSaved(true);
+    } catch (err) {
+      setJustSaved(false);
+      setError(err instanceof Error ? err.message : "La modification doit se faire sur le site officiel.");
+    }
+  }
 
   return (
     <div className="card profile-card">
@@ -303,6 +329,8 @@ function ProfileSettings() {
             onChange={(e) => {
               setBio(e.target.value);
               setJustSaved(false);
+              setError(null);
+              setProfileRedirectArmed(false);
             }}
             placeholder="Ta courte biographie apparaîtra ici."
           />
@@ -316,15 +344,18 @@ function ProfileSettings() {
         </button>
         <button
           className="btn btn-primary"
-          onClick={() => {
-            updateProfile(bio);
-            setJustSaved(true);
-          }}
+          onClick={handleSaveProfile}
           disabled={!dirty}
         >
-          {justSaved ? "Enregistré" : "Sauvegarder"}
+          {user?.isLichess && profileRedirectArmed ? "Ouvrir Lichess" : justSaved ? "Enregistré" : "Sauvegarder"}
         </button>
       </div>
+
+      {error && (
+        <div className="alert alert-warning" style={{ marginTop: "16px" }}>
+          {error} <a href="https://lichess.org/account/profile" target="_blank" rel="noreferrer">Ouvrir Lichess</a>
+        </div>
+      )}
     </div>
   );
 }
@@ -336,11 +367,25 @@ function AccountSettings() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [passwordRedirectArmed, setPasswordRedirectArmed] = useState(false);
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
     setSuccess(false);
+
+    if (user?.isLichess) {
+      if (!passwordRedirectArmed) {
+        setError("Les mots de passe Lichess se modifient uniquement sur le site officiel. Reclique pour ouvrir la page.");
+        setPasswordRedirectArmed(true);
+        return;
+      }
+
+      window.open("https://lichess.org/account/passwd", "_blank", "noopener,noreferrer");
+      setPasswordRedirectArmed(false);
+      return;
+    }
+
     if (newPassword !== confirmPassword) {
       setError("Les nouveaux mots de passe ne correspondent pas.");
       return;
@@ -383,7 +428,10 @@ function AccountSettings() {
             autoComplete="current-password"
             required
             value={currentPassword}
-            onChange={(e) => setCurrentPassword(e.target.value)}
+            onChange={(e) => {
+              setCurrentPassword(e.target.value);
+              setPasswordRedirectArmed(false);
+            }}
           />
         </div>
         <div className="field">
@@ -395,7 +443,10 @@ function AccountSettings() {
             required
             minLength={6}
             value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
+            onChange={(e) => {
+              setNewPassword(e.target.value);
+              setPasswordRedirectArmed(false);
+            }}
           />
         </div>
         <div className="field">
@@ -407,11 +458,14 @@ function AccountSettings() {
             required
             minLength={6}
             value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
+            onChange={(e) => {
+              setConfirmPassword(e.target.value);
+              setPasswordRedirectArmed(false);
+            }}
           />
         </div>
         <button className="btn btn-primary" type="submit">
-          Mettre à jour le mot de passe
+          {user?.isLichess && passwordRedirectArmed ? "Ouvrir Lichess" : "Mettre à jour le mot de passe"}
         </button>
       </form>
     </div>

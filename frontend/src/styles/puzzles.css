@@ -26,6 +26,14 @@
   margin-bottom: 8px;
 }
 
+.puzzles-progress-daily {
+  color: #f2c94c;
+}
+
+.puzzles-progress-unique {
+  color: #5aa9ff;
+}
+
 .puzzles-header h2 {
   margin-bottom: 8px;
 }
@@ -35,7 +43,36 @@
   margin-bottom: 0;
 }
 
+.puzzles-description-source {
+  margin-top: 6px;
+  font-size: 1.1rem;
+}
+
+.puzzles-mode-button {
+  color: #fff;
+  border: 1px solid transparent;
+}
+
+.puzzles-mode-button-daily {
+  background: linear-gradient(135deg, #b88900, #f2c94c);
+}
+
+.puzzles-mode-button-unique {
+  background: linear-gradient(135deg, #00478f, #5aa9ff);
+}
+
+.puzzles-mode-button:hover,
+.puzzles-mode-button:focus-visible {
+  filter: brightness(1.05);
+  transform: translateY(-1px);
+}
+
 .puzzles-status-wrong {
   background: var(--danger);
+  color: #fff;
+}
+
+.puzzles-status-correct {
+  background: #1f8f4a;
   color: #fff;
 }

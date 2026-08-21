@@ -1,0 +1,6 @@
+boto3==1.35.99
+polars==1.43.2
+python-chess==1.999
+python-dotenv==1.2.3
+tqdm==4.67.1
+zstandard==0.25.0

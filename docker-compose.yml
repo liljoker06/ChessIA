@@ -1,0 +1,81 @@
+services:
+  minio:
+    image: minio/minio:latest
+    container_name: chessia-minio
+    ports:
+      - "9000:9000" # S3 API
+      - "9001:9001" # Web console
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  createbuckets:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD} &&
+      mc mb --ignore-existing local/${MINIO_RAW_BUCKET:-chessia-raw} &&
+      mc mb --ignore-existing local/${MINIO_PROCESSED_BUCKET:-chessia-processed} &&
+      exit 0
+      "
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: chessia-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+      - ./training/output:/models
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  training:
+    build: ./training
+    profiles: ["tools"]
+    environment:
+      HF_TOKEN: ${HF_TOKEN}
+    volumes:
+      - ./data:/data
+      - ./training/output:/output
+      - ./training/scripts:/app/scripts
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  eval:
+    build: ./eval
+    profiles: ["tools"]
+    depends_on:
+      - ollama
+    environment:
+      OLLAMA_URL: http://ollama:11434
+    volumes:
+      - ./data:/data
+      - ./training/output:/models
+      - ./eval/scripts:/app/scripts
+      - ./eval/results:/results
+
+volumes:
+  minio_data:
+  ollama_data:
