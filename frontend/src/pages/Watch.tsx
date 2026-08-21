@@ -47,9 +47,10 @@ function parseReplayMoves(pgn: string): string[] {
     .filter((token) => token.length > 0 && !/^\[/.test(token) && !/^(1-0|0-1|1\/2-1\/2|\*)$/.test(token));
 }
 
-function buildReplayGame(replayGame: HistoryGame) {
+function buildReplayGame(replayGame: HistoryGame, moveCount: number) {
+  const replayMoves = parseReplayMoves(replayGame.pgn).slice(0, moveCount);
   const chess = new Chess();
-  for (const san of parseReplayMoves(replayGame.pgn)) {
+  for (const san of replayMoves) {
     const move = chess.move(san, { sloppy: true } as any);
     if (!move) break;
   }
@@ -76,11 +77,12 @@ export function Watch() {
   const location = useLocation();
   const locationState = location.state as WatchLocationState | null;
   const [replayGameState, setReplayGameState] = useState<HistoryGame | undefined>(locationState?.replayGame);
+  const isReplayMode = replayGameState !== undefined;
   const { settings } = useGameSettings();
   const boardTheme = BOARD_THEMES.find((t) => t.id === settings.boardThemeId) ?? BOARD_THEMES[0];
   const pieceStyle = PIECE_STYLES.find((p) => p.id === settings.pieceStyleId) ?? PIECE_STYLES[0];
 
-  const gameRef = useRef(replayGameState ? buildReplayGame(replayGameState) : new Chess());
+  const gameRef = useRef(new Chess());
   const whiteEngineRef = useRef<StockfishEngine | null>(null);
   const blackEngineRef = useRef<StockfishEngine | null>(null);
 
@@ -95,8 +97,18 @@ export function Watch() {
 
   const difficulty = DIFFICULTIES.find((d) => d.id === difficultyId) ?? DIFFICULTIES[1];
   const replayMoves = useMemo(() => (replayGameState ? parseReplayMoves(replayGameState.pgn) : []), [replayGameState]);
+  const replayGame = useMemo(
+    () => (replayGameState ? buildReplayGame(replayGameState, replayIndex) : null),
+    [replayGameState, replayIndex, replayMoves]
+  );
+  const replayLastMove = useMemo(() => {
+    if (!replayGameState || replayIndex === 0) return null;
+    const history = replayGame?.history({ verbose: true }) ?? [];
+    const last = history[history.length - 1];
+    return last ? { from: last.from as Square, to: last.to as Square } : null;
+  }, [replayGameState, replayGame, replayIndex]);
 
-  const game = gameRef.current;
+  const game = replayGameState ? replayGame ?? gameRef.current : gameRef.current;
   const rerender = () => setVersion((v) => v + 1);
 
   const board = game.board();
@@ -105,49 +117,32 @@ export function Watch() {
   const isGameOver = game.isGameOver();
 
   useEffect(() => {
-    if (!replayGameState) return;
+    if (!isReplayMode) return;
 
-    const replayChess = new Chess();
-    gameRef.current = replayChess;
+    gameRef.current = new Chess();
     setLastMove(null);
     setReplayIndex(0);
     setThinking(false);
-    setRunning(false);
+    setRunning(true);
     setEnginesReady(false);
     rerender();
-
-    let cancelled = false;
-    let timeoutId: number | undefined;
-
-    const stepReplay = (moveIndex: number) => {
-      if (cancelled) return;
-      if (moveIndex >= replayMoves.length) return;
-
-      const san = replayMoves[moveIndex];
-      const move = replayChess.move(san, { sloppy: true } as any);
-      if (move) {
-        setLastMove({ from: move.from as Square, to: move.to as Square });
-      }
-      setReplayIndex(moveIndex + 1);
-      rerender();
-
-      timeoutId = window.setTimeout(() => stepReplay(moveIndex + 1), 700);
-    };
-
-    timeoutId = window.setTimeout(() => stepReplay(0), 400);
-
-    return () => {
-      cancelled = true;
-      if (timeoutId !== undefined) {
-        window.clearTimeout(timeoutId);
-      }
-    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [replayGameState, replayMoves]);
+  }, [isReplayMode, replayMoves]);
+
+  useEffect(() => {
+    if (!isReplayMode || !running) return;
+    if (replayIndex >= replayMoves.length) return;
+
+    const timeoutId = window.setTimeout(() => {
+      setReplayIndex((current) => Math.min(current + 1, replayMoves.length));
+    }, 700);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [isReplayMode, running, replayIndex, replayMoves.length]);
 
   // The engine drives both sides of the board — it's one AI playing out a full game, not two AIs facing off.
   useEffect(() => {
-    if (replayGameState) return;
+    if (isReplayMode) return;
 
     const whiteEngine = new StockfishEngine();
     const blackEngine = new StockfishEngine();
@@ -166,18 +161,18 @@ export function Watch() {
       blackEngine.terminate();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [replayGameState]);
+  }, [isReplayMode]);
 
   // A difficulty change takes effect starting with the next move played.
   useEffect(() => {
-    if (replayGameState) return;
+    if (isReplayMode) return;
     whiteEngineRef.current?.setSkillLevel(difficulty.skillLevel);
     blackEngineRef.current?.setSkillLevel(difficulty.skillLevel);
-  }, [difficulty, replayGameState]);
+  }, [difficulty, isReplayMode]);
 
   // Whenever it's a side's turn (and playback is running), ask the engine for a move.
   useEffect(() => {
-    if (replayGameState || !enginesReady || !running || isGameOver) return;
+    if (isReplayMode || !enginesReady || !running || isGameOver) return;
     const engine = turn === "w" ? whiteEngineRef.current : blackEngineRef.current;
     const movetimeMs = difficulty.movetimeMs;
     if (!engine) return;
@@ -199,7 +194,12 @@ export function Watch() {
       engine.stop();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [version, running, enginesReady, replayGameState]);
+  }, [version, running, enginesReady, isReplayMode]);
+
+  useEffect(() => {
+    if (!isReplayMode) return;
+    setLastMove(replayLastMove);
+  }, [isReplayMode, replayLastMove]);
 
   const checkSquare = useMemo(() => {
     if (!inCheck) return null;
@@ -228,7 +228,7 @@ export function Watch() {
   }, [game, version]);
 
   const statusText = useMemo(() => {
-    if (replayGameState) {
+    if (isReplayMode) {
       return `Relecture de la partie du ${new Date(replayGameState.date).toLocaleDateString("fr-FR")} (${replayIndex}/${replayMoves.length}).`;
     }
     if (game.isCheckmate()) return `Échec et mat — les ${turn === "w" ? "Noirs" : "Blancs"} gagnent.`;
@@ -243,7 +243,7 @@ export function Watch() {
     if (inCheck) return `Échec au roi ${turn === "w" ? "blanc" : "noir"} !`;
     return `Trait aux ${turn === "w" ? "Blancs" : "Noirs"}`;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [game, version, turn, inCheck, thinking, running, enginesReady, replayGameState, replayIndex, replayMoves.length]);
+  }, [game, version, turn, inCheck, thinking, running, enginesReady, isReplayMode, replayGameState, replayIndex, replayMoves.length]);
 
   function handleNewGame() {
     setReplayGameState(undefined);
@@ -254,6 +254,26 @@ export function Watch() {
     blackEngineRef.current?.newGame();
     setRunning(true);
     rerender();
+  }
+
+  function handleReplayToggle() {
+    if (!isReplayMode) {
+      setRunning((current) => !current);
+      return;
+    }
+
+    setRunning((current) => {
+      if (current) return false;
+      if (replayIndex >= replayMoves.length) {
+        setReplayIndex(0);
+      }
+      return true;
+    });
+  }
+
+  function handleReplayJump(moveIndex: number) {
+    setReplayIndex(moveIndex);
+    setRunning(false);
   }
 
   return (
@@ -280,8 +300,8 @@ export function Watch() {
             <div className="match-actions">
               <button
                 className="btn btn-ghost btn-sm"
-                onClick={() => setRunning((r) => !r)}
-                disabled={!enginesReady || isGameOver}
+                onClick={handleReplayToggle}
+                disabled={!isReplayMode && (!enginesReady || isGameOver)}
               >
                 {running ? <Pause size={16} /> : <Play size={16} />}
                 {running ? "Pause" : "Reprendre"}
@@ -306,7 +326,7 @@ export function Watch() {
             board={board}
             selected={null}
             legalTargets={[]}
-            lastMove={lastMove}
+            lastMove={replayGameState ? replayLastMove : lastMove}
             checkSquare={checkSquare}
             orientation={orientation}
             disabled
@@ -333,9 +353,28 @@ export function Watch() {
               </span>}
             </div>
             <ol className="moves-list">
-              {(replayGameState ? replayMoves : game.history()).map((san, i) => (
-                <li key={i}>{san}</li>
-              ))}
+              {replayGameState
+                ? replayMoves.map((san, i) => {
+                    const moveNumber = Math.floor(i / 2) + 1;
+                    const isWhiteMove = i % 2 === 0;
+                    const isCurrent = i === replayIndex - 1;
+
+                    return (
+                      <li key={i} className={isCurrent ? "moves-list-item-active" : undefined}>
+                        <button
+                          type="button"
+                          className="replay-move-number"
+                          onClick={() => handleReplayJump(i + 1)}
+                          aria-label={`Aller au coup ${moveNumber}${isWhiteMove ? "." : "..."}`}
+                        >
+                          {moveNumber}{isWhiteMove ? "." : "..."}
+                          <span className="replay-move-san">{san}</span>
+                        </button>
+                        
+                      </li>
+                    );
+                  })
+                : game.history().map((san, i) => <li key={i}>{san}</li>)}
             </ol>
             {(replayGameState ? replayMoves.length : game.history().length) === 0 && (
               <p className="captures-label">Aucun coup joué.</p>
