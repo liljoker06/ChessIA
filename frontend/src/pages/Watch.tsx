@@ -1,10 +1,12 @@
 import { Chess, type Square, type PieceSymbol } from "chess.js";
 import { Pause, Play, RotateCcw } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { ChessBoard } from "../components/ChessBoard";
 import { DIFFICULTIES } from "../engine/difficulty";
 import { StockfishEngine } from "../engine/stockfishEngine";
 import { useGameSettings } from "../hooks/useGameSettings";
+import { type HistoryGame } from "../hooks/useGameHistory";
 import { BOARD_THEMES } from "../theme/boardThemes";
 import { PIECE_STYLES } from "../theme/pieceStyles";
 import "../styles/watch.css";
@@ -25,6 +27,35 @@ const PIECE_UNICODE: Record<string, string> = {
   bk: "♚",
 };
 
+type WatchLocationState = {
+  replayGame?: HistoryGame;
+};
+
+function parseReplayMoves(pgn: string): string[] {
+  const moveSection = pgn
+    .split(/\r?\n/)
+    .filter((line) => !/^\s*\[/.test(line))
+    .join(" ");
+
+  return moveSection
+    .replace(/\{[^}]*\}/g, " ")
+    .replace(/;[^\n]*/g, " ")
+    .replace(/\$\d+/g, " ")
+    .replace(/\d+\.(?:\.\.\.)?/g, " ")
+    .split(/\s+/)
+    .map((token) => token.trim())
+    .filter((token) => token.length > 0 && !/^\[/.test(token) && !/^(1-0|0-1|1\/2-1\/2|\*)$/.test(token));
+}
+
+function buildReplayGame(replayGame: HistoryGame) {
+  const chess = new Chess();
+  for (const san of parseReplayMoves(replayGame.pgn)) {
+    const move = chess.move(san, { sloppy: true } as any);
+    if (!move) break;
+  }
+  return chess;
+}
+
 function pieceValue(type: PieceSymbol): number {
   switch (type) {
     case "p":
@@ -42,16 +73,20 @@ function pieceValue(type: PieceSymbol): number {
 }
 
 export function Watch() {
+  const location = useLocation();
+  const locationState = location.state as WatchLocationState | null;
+  const [replayGameState, setReplayGameState] = useState<HistoryGame | undefined>(locationState?.replayGame);
   const { settings } = useGameSettings();
   const boardTheme = BOARD_THEMES.find((t) => t.id === settings.boardThemeId) ?? BOARD_THEMES[0];
   const pieceStyle = PIECE_STYLES.find((p) => p.id === settings.pieceStyleId) ?? PIECE_STYLES[0];
 
-  const gameRef = useRef(new Chess());
+  const gameRef = useRef(replayGameState ? buildReplayGame(replayGameState) : new Chess());
   const whiteEngineRef = useRef<StockfishEngine | null>(null);
   const blackEngineRef = useRef<StockfishEngine | null>(null);
 
   const [version, setVersion] = useState(0);
   const [lastMove, setLastMove] = useState<{ from: Square; to: Square } | null>(null);
+  const [replayIndex, setReplayIndex] = useState(0);
   const [orientation, setOrientation] = useState<"w" | "b">("w");
   const [thinking, setThinking] = useState(false);
   const [running, setRunning] = useState(true);
@@ -59,6 +94,7 @@ export function Watch() {
   const [difficultyId, setDifficultyId] = useState(DIFFICULTIES[1].id);
 
   const difficulty = DIFFICULTIES.find((d) => d.id === difficultyId) ?? DIFFICULTIES[1];
+  const replayMoves = useMemo(() => (replayGameState ? parseReplayMoves(replayGameState.pgn) : []), [replayGameState]);
 
   const game = gameRef.current;
   const rerender = () => setVersion((v) => v + 1);
@@ -68,8 +104,51 @@ export function Watch() {
   const inCheck = game.inCheck();
   const isGameOver = game.isGameOver();
 
+  useEffect(() => {
+    if (!replayGameState) return;
+
+    const replayChess = new Chess();
+    gameRef.current = replayChess;
+    setLastMove(null);
+    setReplayIndex(0);
+    setThinking(false);
+    setRunning(false);
+    setEnginesReady(false);
+    rerender();
+
+    let cancelled = false;
+    let timeoutId: number | undefined;
+
+    const stepReplay = (moveIndex: number) => {
+      if (cancelled) return;
+      if (moveIndex >= replayMoves.length) return;
+
+      const san = replayMoves[moveIndex];
+      const move = replayChess.move(san, { sloppy: true } as any);
+      if (move) {
+        setLastMove({ from: move.from as Square, to: move.to as Square });
+      }
+      setReplayIndex(moveIndex + 1);
+      rerender();
+
+      timeoutId = window.setTimeout(() => stepReplay(moveIndex + 1), 700);
+    };
+
+    timeoutId = window.setTimeout(() => stepReplay(0), 400);
+
+    return () => {
+      cancelled = true;
+      if (timeoutId !== undefined) {
+        window.clearTimeout(timeoutId);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [replayGameState, replayMoves]);
+
   // The engine drives both sides of the board — it's one AI playing out a full game, not two AIs facing off.
   useEffect(() => {
+    if (replayGameState) return;
+
     const whiteEngine = new StockfishEngine();
     const blackEngine = new StockfishEngine();
     whiteEngineRef.current = whiteEngine;
@@ -87,17 +166,18 @@ export function Watch() {
       blackEngine.terminate();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [replayGameState]);
 
   // A difficulty change takes effect starting with the next move played.
   useEffect(() => {
+    if (replayGameState) return;
     whiteEngineRef.current?.setSkillLevel(difficulty.skillLevel);
     blackEngineRef.current?.setSkillLevel(difficulty.skillLevel);
-  }, [difficulty]);
+  }, [difficulty, replayGameState]);
 
   // Whenever it's a side's turn (and playback is running), ask the engine for a move.
   useEffect(() => {
-    if (!enginesReady || !running || isGameOver) return;
+    if (replayGameState || !enginesReady || !running || isGameOver) return;
     const engine = turn === "w" ? whiteEngineRef.current : blackEngineRef.current;
     const movetimeMs = difficulty.movetimeMs;
     if (!engine) return;
@@ -119,7 +199,7 @@ export function Watch() {
       engine.stop();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [version, running, enginesReady]);
+  }, [version, running, enginesReady, replayGameState]);
 
   const checkSquare = useMemo(() => {
     if (!inCheck) return null;
@@ -148,6 +228,9 @@ export function Watch() {
   }, [game, version]);
 
   const statusText = useMemo(() => {
+    if (replayGameState) {
+      return `Relecture de la partie du ${new Date(replayGameState.date).toLocaleDateString("fr-FR")} (${replayIndex}/${replayMoves.length}).`;
+    }
     if (game.isCheckmate()) return `Échec et mat — les ${turn === "w" ? "Noirs" : "Blancs"} gagnent.`;
     if (game.isStalemate()) return "Pat — partie nulle.";
     if (game.isThreefoldRepetition()) return "Nulle par répétition.";
@@ -160,9 +243,10 @@ export function Watch() {
     if (inCheck) return `Échec au roi ${turn === "w" ? "blanc" : "noir"} !`;
     return `Trait aux ${turn === "w" ? "Blancs" : "Noirs"}`;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [game, version, turn, inCheck, thinking, running, enginesReady]);
+  }, [game, version, turn, inCheck, thinking, running, enginesReady, replayGameState, replayIndex, replayMoves.length]);
 
   function handleNewGame() {
+    setReplayGameState(undefined);
     gameRef.current = new Chess();
     setLastMove(null);
     setThinking(false);
@@ -243,17 +327,19 @@ export function Watch() {
           <div className="card moves-card">
             <div className="moves-card-header">
               <h3>Coups joués</h3>
-              <span className="live-badge">
+              {replayGameState ? <span className="live-badge">Partie historique</span> : <span className="live-badge">
                 <span className="live-dot" />
                 En direct
-              </span>
+              </span>}
             </div>
             <ol className="moves-list">
-              {game.history().map((san, i) => (
+              {(replayGameState ? replayMoves : game.history()).map((san, i) => (
                 <li key={i}>{san}</li>
               ))}
             </ol>
-            {game.history().length === 0 && <p className="captures-label">Aucun coup joué.</p>}
+            {(replayGameState ? replayMoves.length : game.history().length) === 0 && (
+              <p className="captures-label">Aucun coup joué.</p>
+            )}
           </div>
 
           <div className="card">
@@ -288,7 +374,7 @@ export function Watch() {
         </aside>
       </div>
 
-      {isGameOver && (
+      {!replayGameState && isGameOver && (
         <div className="modal-backdrop">
           <div className="modal">
             <h2>Partie terminée</h2>

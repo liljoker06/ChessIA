@@ -1,6 +1,7 @@
 import { Chess } from "chess.js";
-import { Bot, Clock, Download, Heart, Trash2 } from "lucide-react";
+import { Bot, Clock, Download, Heart } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { ChessBoard } from "../components/ChessBoard";
 import { SAMPLE_GAMES, useGameHistory, type HistoryGame } from "../hooks/useGameHistory";
 import { BOARD_THEMES, DEFAULT_BOARD_THEME_ID } from "../theme/boardThemes";
@@ -110,14 +111,26 @@ const boardTheme = BOARD_THEMES.find((t) => t.id === DEFAULT_BOARD_THEME_ID) ?? 
 interface HistoryRowProps {
   game: HistoryGame;
   onToggleFavorite: () => void;
+  onOpenGame: () => void;
 }
 
-function HistoryRow({ game, onToggleFavorite }: HistoryRowProps) {
+function HistoryRow({ game, onToggleFavorite, onOpenGame }: HistoryRowProps) {
   const finalPosition = new Chess(game.finalFen);
   const stats = illustrativeStats(game);
 
   return (
-    <div className="card history-row">
+    <div
+      className="card history-row"
+      role="button"
+      tabIndex={0}
+      onClick={onOpenGame}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onOpenGame();
+        }
+      }}
+    >
       <div className="history-row-thumb">
         <ChessBoard
           board={finalPosition.board()}
@@ -192,13 +205,23 @@ function HistoryRow({ game, onToggleFavorite }: HistoryRowProps) {
         <div className="history-row-actions">
           <button
             className={`history-action-button ${game.favorite ? "history-action-button-active" : ""}`}
-            onClick={onToggleFavorite}
+            onClick={(event) => {
+              event.stopPropagation();
+              onToggleFavorite();
+            }}
             title={game.favorite ? "Retirer des favoris" : "Ajouter aux favoris"}
             aria-pressed={game.favorite}
           >
             <Heart size={16} fill={game.favorite ? "currentColor" : "none"} />
           </button>
-          <button className="history-action-button" onClick={() => downloadPgn(game)} title="Télécharger le PGN">
+          <button
+            className="history-action-button"
+            onClick={(event) => {
+              event.stopPropagation();
+              downloadPgn(game);
+            }}
+            title="Télécharger le PGN"
+          >
             <Download size={16} />
           </button>
         </div>
@@ -209,6 +232,7 @@ function HistoryRow({ game, onToggleFavorite }: HistoryRowProps) {
 
 export function History() {
   const { games: localGames, toggleFavorite } = useGameHistory();
+  const navigate = useNavigate();
   const { user } = useAuth(); 
   
   const [lichessGames, setLichessGames] = useState<HistoryGame[]>([]);
@@ -327,6 +351,7 @@ useEffect(() => {
               key={g.id}
               game={g}
               onToggleFavorite={() => toggleFavorite(g.id)}
+                onOpenGame={() => navigate("/partie", { state: { replayGame: g } })}
             />
           ))}
         </div>
