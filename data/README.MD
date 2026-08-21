@@ -6,15 +6,19 @@
  ## Installation
  
  1. Choisir le mois et le format du dataset sur le site de Lichess.
- 2. Télécharger l’archive, généralement au format `.pgn.zst`.
- 3. Installer [Zstandard](https://github.com/facebook/zstd), puis décompresser
-	 l’archive :
+ 2. Télécharger l’archive au format `.pgn.zst`.
+ 3. Placer l’archive `.pgn.zst` telle quelle dans ce dossier (`data/`), **sans
+	 la décompresser**.
  
-	 ```bash
-	 zstd -d lichess_YYYY-MM.pgn.zst -o lichess_YYYY-MM.pgn
-	 ```
+ ## ⚠️ Ne pas extraire l’archive
  
- 4. Placer le fichier `.pgn` obtenu dans ce dossier (`data/`).
+ Un `.pgn.zst` décompresse souvent en un fichier **5 à 10 fois plus gros**
+ (annotations `%eval`/`%clk` très répétitives). Un mois de Lichess pèse
+ ~29 Go compressé mais peut dépasser 150-300 Go une fois extrait, ce qui ne
+ tient pas forcément sur le disque — une extraction interrompue par manque
+ d’espace laisse un fichier `.pgn` corrompu (tronqué/incohérent dès le début).
  
- Les datasets peuvent être volumineux : vérifier l’espace disque disponible avant
- le téléchargement et conserver le mois dans le nom du fichier.
+ Utiliser plutôt [`api/utils/readFiles.py`](../api/utils/readFiles.py), qui lit
+ le `.pgn.zst` directement en streaming (décompression à la volée via le
+ package `zstandard`) sans jamais écrire le fichier complet décompressé sur
+ disque.
