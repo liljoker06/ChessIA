@@ -10,6 +10,7 @@ idna==3.19
 pydantic==2.13.4
 pydantic_core==2.46.4
 python-dotenv==1.2.3
+polars==1.43.2
 PyYAML==6.0.3
 starlette==1.6.0
 typing-inspection==0.4.4
@@ -17,3 +18,4 @@ typing_extensions==4.16.0
 uvicorn==0.52.4
 watchfiles==1.2.0
 websockets==17.0.1
+zstandard==0.25.0
