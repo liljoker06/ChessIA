@@ -120,24 +120,17 @@ export function Sidebar({ showOptions, onToggleOptions, mobileOpen, onClose }: S
 
         <div className="sidebar-auth">
           {user ? (
-            <>
-              <span className="badge sidebar-auth-badge">{user.username}</span>
-              <button className="btn btn-ghost btn-sm btn-block" onClick={handleLogout}>
-                <LogOut size={16} />
-                Déconnexion
-              </button>
-            </>
+            // a renvoyer sur le profil (bouton parametre etc)
+            <div className="user-profile">
+              <p>Connecté en tant que <strong>{user.username}</strong></p>
+              {user.elo && <p>Elo Lichess : {user.elo}</p>}
+              <button className="btn" onClick={logout}>Se déconnecter</button>
+            </div>
           ) : (
-            <>
-              <Link to="/signup" className="btn btn-primary btn-sm btn-block" onClick={onClose}>
-                <UserPlus size={16} />
-                Inscription
-              </Link>
-              <Link to="/login" className="btn btn-ghost btn-sm btn-block" onClick={onClose}>
-                <LogIn size={16} />
-                Connexion
-              </Link>
-            </>
+            <div className="auth-buttons">
+              <Link to="/login" className="btn">Connexion</Link>
+              <Link to="/signup" className="btn btn-primary">Inscription</Link>
+            </div>
           )}
         </div>
 

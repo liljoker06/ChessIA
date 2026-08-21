@@ -7,6 +7,7 @@ import { Home } from "./pages/Home";
 import { Login } from "./pages/Login";
 import { Signup } from "./pages/Signup";
 import { Watch } from "./pages/Watch";
+import { OAuthCallback } from "./pages/OAuthCallback"; 
 import "./styles/ui.css";
 
 export default function App() {
@@ -29,6 +30,8 @@ export default function App() {
           <Route path="/apropos" element={<About />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+
+          <Route path="/oauth/callback" element={<OAuthCallback />} /> 
         </Routes>
       </main>
     </div>
