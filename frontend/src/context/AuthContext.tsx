@@ -1,11 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 
-/**
- * Mock auth: users + sessions live in localStorage only, no server.
- * There is no backend for this project — this is a client-only account
- * system, not a stand-in for one.
- */
-
 interface StoredUser {
   id: string;
   username: string;
@@ -17,17 +11,21 @@ export interface AuthUser {
   id: string;
   username: string;
   email: string;
+  elo?: number; 
+  isLichess?: boolean; 
 }
 
 interface AuthContextValue {
   user: AuthUser | null;
   login: (email: string, password: string, remember?: boolean) => Promise<void>;
   signup: (username: string, email: string, password: string) => Promise<void>;
+  loginWithToken: (token: string) => Promise<void>; 
   logout: () => void;
 }
 
 const USERS_KEY = "chess-users";
 const SESSION_KEY = "chess-session";
+const TOKEN_KEY = "chess-api-token";
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
@@ -50,12 +48,42 @@ function toPublicUser(u: StoredUser): AuthUser {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
 
+  const fetchProfileFromAPI = async (token: string) => {
+    try {
+      const res = await fetch("http://localhost:8000/api/me", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error("Token expiré ou erreur serveur");
+      
+      const userData = await res.json();
+      setUser(userData); 
+    } catch (err) {
+      console.error(err);
+      localStorage.removeItem(TOKEN_KEY);
+      setUser(null);
+    }
+  };
+
+  // ⚡️ LE SEUL ET UNIQUE useEffect POUR INITIALISER LA SESSION
   useEffect(() => {
+    // Session locale classique
     const sessionId = localStorage.getItem(SESSION_KEY) ?? sessionStorage.getItem(SESSION_KEY);
-    if (!sessionId) return;
-    const found = readUsers().find((u) => u.id === sessionId);
-    if (found) setUser(toPublicUser(found));
+    if (sessionId) {
+      const found = readUsers().find((u) => u.id === sessionId);
+      if (found) setUser(toPublicUser(found));
+    }
+
+    // Session Lichess via ton API
+    const apiToken = localStorage.getItem(TOKEN_KEY);
+    if (apiToken) {
+      fetchProfileFromAPI(apiToken);
+    }
   }, []);
+
+  const loginWithToken = async (token: string) => {
+    localStorage.setItem(TOKEN_KEY, token); 
+    await fetchProfileFromAPI(token); 
+  };
 
   const login = async (email: string, password: string, remember = true) => {
     const normalizedEmail = email.trim().toLowerCase();
@@ -63,7 +91,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!found || found.password !== password) {
       throw new Error("Email ou mot de passe incorrect.");
     }
-    // "Se souvenir de moi" off means the session doesn't survive closing the tab.
     (remember ? localStorage : sessionStorage).setItem(SESSION_KEY, found.id);
     setUser(toPublicUser(found));
   };
@@ -91,10 +118,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     localStorage.removeItem(SESSION_KEY);
     sessionStorage.removeItem(SESSION_KEY);
+    localStorage.removeItem(TOKEN_KEY); 
     setUser(null);
   };
 
-  return <AuthContext.Provider value={{ user, login, signup, logout }}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={{ user, login, signup, loginWithToken, logout }}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
