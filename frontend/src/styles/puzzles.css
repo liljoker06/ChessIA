@@ -76,3 +76,66 @@
   background: #1f8f4a;
   color: #fff;
 }
+
+@media (max-width: 900px) {
+  .puzzles-page {
+    padding: 24px 16px 56px;
+  }
+
+  .puzzles-layout {
+    width: 100%;
+  }
+
+  .puzzles-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .puzzles-header > div:last-child {
+    align-items: stretch !important;
+    width: 100%;
+  }
+
+  .puzzles-header > div:last-child > div {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .puzzles-mode-button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .board-column {
+    width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .puzzles-progress {
+    font-size: 1.05rem;
+  }
+
+  .puzzles-header h2 {
+    font-size: 2rem;
+  }
+
+  .puzzles-description,
+  .puzzles-description-source {
+    font-size: 1rem;
+  }
+
+  .puzzles-header > div:last-child {
+    gap: 12px;
+  }
+
+  .puzzles-header > div:last-child .badge {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .status-bar {
+    min-width: 0;
+    width: 100%;
+  }
+}
