@@ -50,14 +50,14 @@ useEffect(() => {
       const data = await res.json();
       
       const tempChess = new Chess();
-      tempChess.loadPgn(data.game.pgn); // Le PGN s'arrête au bon moment !
+      tempChess.loadPgn(data.game.pgn); 
 
       setDailyPuzzle({
         id: data.puzzle.id,
         title: "Puzzle du jour Lichess",
         description: `Elo: ${data.puzzle.rating} | Joué ${data.puzzle.plays} fois`,
         fen: tempChess.fen(),
-        moves: data.puzzle.solution // ⚡️ On garde toute la solution
+        moves: data.puzzle.solution
       });
       setUseDaily(true);
       resetPuzzleState();
@@ -102,7 +102,7 @@ useEffect(() => {
   };
 
   function handleNext() {
-    setUseDaily(false); // On désactive le mode Lichess
+    setUseDaily(false);
     setIndex((i) => (i + 1) % PUZZLES.length);
     resetPuzzleState();
   }
