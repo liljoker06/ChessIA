@@ -1,16 +1,42 @@
-import { Grid3x3, KeyRound, User } from "lucide-react";
+import {
+  Accessibility,
+  Bell,
+  CreditCard,
+  GraduationCap,
+  Grid3x3,
+  KeyRound,
+  Monitor,
+  Swords,
+  User,
+  Users,
+} from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../context/ThemeContext";
+import { DIFFICULTIES } from "../engine/difficulty";
 import { useGameSettings, type GameSettings } from "../hooks/useGameSettings";
+import { ACCENTS } from "../theme/accents";
 import type { BoardTheme } from "../theme/boardThemes";
 import { BOARD_THEMES } from "../theme/boardThemes";
 import type { PieceStyle } from "../theme/pieceStyles";
 import { PIECE_STYLES } from "../theme/pieceStyles";
+import { PRESETS } from "../theme/presets";
 import "../components/GameOptionsPanel.css";
 import "../styles/settings.css";
 
-type Tab = "board" | "profile" | "account";
-type BoardInnerTab = "theme" | "pieces";
+type Tab =
+  | "board"
+  | "profile"
+  | "account"
+  | "gamemode"
+  | "interface"
+  | "social"
+  | "coach"
+  | "notifications"
+  | "subscription"
+  | "accessibility";
+
+type BoardInnerTab = "theme" | "pieces" | "background" | "presets";
 
 const MINI_PREVIEW_CELLS: ({ type: string; color: "w" | "b" } | null)[][] = [
   [
@@ -84,6 +110,7 @@ function BoardSettings() {
   const dirty =
     draft.boardThemeId !== settings.boardThemeId ||
     draft.pieceStyleId !== settings.pieceStyleId ||
+    draft.accentId !== settings.accentId ||
     draft.showCoordinates !== settings.showCoordinates ||
     draft.highlightLastMove !== settings.highlightLastMove;
 
@@ -95,6 +122,7 @@ function BoardSettings() {
   function handleSave() {
     update("boardThemeId", draft.boardThemeId);
     update("pieceStyleId", draft.pieceStyleId);
+    update("accentId", draft.accentId);
     update("showCoordinates", draft.showCoordinates);
     update("highlightLastMove", draft.highlightLastMove);
     setJustSaved(true);
@@ -123,10 +151,24 @@ function BoardSettings() {
           >
             Pièces
           </button>
+          <button
+            type="button"
+            className={`settings-inner-tab ${innerTab === "background" ? "settings-inner-tab-active" : ""}`}
+            onClick={() => setInnerTab("background")}
+          >
+            Arrière-plan
+          </button>
+          <button
+            type="button"
+            className={`settings-inner-tab ${innerTab === "presets" ? "settings-inner-tab-active" : ""}`}
+            onClick={() => setInnerTab("presets")}
+          >
+            Prédéfinis
+          </button>
         </div>
 
         <div className="board-settings-row">
-          {innerTab === "theme" ? (
+          {innerTab === "theme" && (
             <div className="board-theme-grid">
               {BOARD_THEMES.map((t) => (
                 <button
@@ -143,7 +185,9 @@ function BoardSettings() {
                 </button>
               ))}
             </div>
-          ) : (
+          )}
+
+          {innerTab === "pieces" && (
             <div className="piece-style-grid">
               {PIECE_STYLES.map((p) => (
                 <button
@@ -158,6 +202,48 @@ function BoardSettings() {
                   <span className="piece-style-label">{p.label}</span>
                 </button>
               ))}
+            </div>
+          )}
+
+          {innerTab === "background" && (
+            <div className="accent-grid">
+              {ACCENTS.map((a) => (
+                <button
+                  key={a.id}
+                  className={`accent-swatch ${draft.accentId === a.id ? "accent-swatch-active" : ""}`}
+                  onClick={() => setDraftField("accentId", a.id)}
+                  title={a.label}
+                >
+                  <span className="accent-swatch-dot" style={{ background: a.accent }} />
+                  <span className="piece-style-label">{a.label}</span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {innerTab === "presets" && (
+            <div className="piece-style-grid">
+              {PRESETS.map((p) => {
+                const t = BOARD_THEMES.find((bt) => bt.id === p.boardThemeId) ?? BOARD_THEMES[0];
+                const ps = PIECE_STYLES.find((pst) => pst.id === p.pieceStyleId) ?? PIECE_STYLES[0];
+                const active = draft.boardThemeId === p.boardThemeId && draft.pieceStyleId === p.pieceStyleId;
+                return (
+                  <button
+                    key={p.id}
+                    className={`piece-style-swatch ${active ? "piece-style-swatch-active" : ""}`}
+                    onClick={() => {
+                      setDraftField("boardThemeId", p.boardThemeId);
+                      setDraftField("pieceStyleId", p.pieceStyleId);
+                    }}
+                  >
+                    <span className="piece-style-preview">
+                      <span style={{ color: t.dark }}>♞</span>
+                      <span style={{ color: ps.blackFill, WebkitTextStroke: `1px ${ps.blackStroke}` }}>♞</span>
+                    </span>
+                    <span className="piece-style-label">{p.label}</span>
+                  </button>
+                );
+              })}
             </div>
           )}
 
@@ -332,6 +418,119 @@ function AccountSettings() {
   );
 }
 
+function GameModeSettings() {
+  const { settings, update } = useGameSettings();
+  const [draft, setDraft] = useState(settings.defaultDifficultyId);
+  const [justSaved, setJustSaved] = useState(false);
+  const dirty = draft !== settings.defaultDifficultyId;
+
+  return (
+    <div className="card">
+      <h3>Mode de jeu</h3>
+      <p className="settings-subtitle">Choisis le niveau utilisé par défaut quand tu défies un bot.</p>
+      <div className="field">
+        <label>Difficulté par défaut</label>
+        <div className="choice-row">
+          {DIFFICULTIES.map((d) => (
+            <button
+              key={d.id}
+              type="button"
+              className={`btn ${draft === d.id ? "btn-primary" : "btn-ghost"}`}
+              onClick={() => {
+                setDraft(d.id);
+                setJustSaved(false);
+              }}
+            >
+              {d.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="modal-actions">
+        <button
+          className="btn btn-ghost"
+          onClick={() => {
+            setDraft(settings.defaultDifficultyId);
+            setJustSaved(false);
+          }}
+          disabled={!dirty}
+        >
+          Annuler
+        </button>
+        <button
+          className="btn btn-primary"
+          onClick={() => {
+            update("defaultDifficultyId", draft);
+            setJustSaved(true);
+          }}
+          disabled={!dirty}
+        >
+          {justSaved ? "Enregistré" : "Sauvegarder"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function InterfaceSettings() {
+  const { theme, toggleTheme } = useTheme();
+  return (
+    <div className="card">
+      <h3>Interface</h3>
+      <ToggleRow label="Thème sombre" checked={theme === "dark"} onChange={toggleTheme} />
+      <div className="options-toggle-row">
+        <span>Langue</span>
+        <span className="badge">Français</span>
+      </div>
+    </div>
+  );
+}
+
+function AccessibilitySettings() {
+  const { settings, update } = useGameSettings();
+  return (
+    <div className="card">
+      <h3>Accessibilité</h3>
+      <ToggleRow
+        label="Réduire les animations"
+        checked={settings.reduceMotion}
+        onChange={(v) => update("reduceMotion", v)}
+      />
+    </div>
+  );
+}
+
+function SubscriptionSettings() {
+  return (
+    <div className="card">
+      <h3>Abonnement</h3>
+      <p>ChessIA est entièrement gratuit. Il n'y a aucun abonnement ni fonctionnalité payante.</p>
+    </div>
+  );
+}
+
+function ComingSoonPanel({ title, text }: { title: string; text: string }) {
+  return (
+    <div className="card">
+      <h3>{title}</h3>
+      <p>{text}</p>
+    </div>
+  );
+}
+
+const SUBNAV_ITEMS: { id: Tab; label: string; icon: typeof Grid3x3 }[] = [
+  { id: "board", label: "Échiquier et pièces", icon: Grid3x3 },
+  { id: "gamemode", label: "Mode de jeu", icon: Swords },
+  { id: "profile", label: "Profil", icon: User },
+  { id: "interface", label: "Interface", icon: Monitor },
+  { id: "social", label: "Social", icon: Users },
+  { id: "coach", label: "Entraîneur", icon: GraduationCap },
+  { id: "notifications", label: "Notifications", icon: Bell },
+  { id: "account", label: "Compte", icon: KeyRound },
+  { id: "subscription", label: "Abonnement", icon: CreditCard },
+  { id: "accessibility", label: "Accessibilité", icon: Accessibility },
+];
+
 export function Settings() {
   const [tab, setTab] = useState<Tab>("board");
 
@@ -342,36 +541,39 @@ export function Settings() {
 
       <div className="settings-shell">
         <nav className="settings-subnav">
-          <button
-            type="button"
-            className={`settings-subnav-item ${tab === "board" ? "settings-subnav-item-active" : ""}`}
-            onClick={() => setTab("board")}
-          >
-            <Grid3x3 size={18} />
-            Échiquier et pièces
-          </button>
-          <button
-            type="button"
-            className={`settings-subnav-item ${tab === "profile" ? "settings-subnav-item-active" : ""}`}
-            onClick={() => setTab("profile")}
-          >
-            <User size={18} />
-            Profil
-          </button>
-          <button
-            type="button"
-            className={`settings-subnav-item ${tab === "account" ? "settings-subnav-item-active" : ""}`}
-            onClick={() => setTab("account")}
-          >
-            <KeyRound size={18} />
-            Compte
-          </button>
+          {SUBNAV_ITEMS.map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              type="button"
+              className={`settings-subnav-item ${tab === id ? "settings-subnav-item-active" : ""}`}
+              onClick={() => setTab(id)}
+            >
+              <Icon size={18} />
+              {label}
+            </button>
+          ))}
         </nav>
 
         <div className="settings-content">
           {tab === "board" && <BoardSettings />}
           {tab === "profile" && <ProfileSettings />}
           {tab === "account" && <AccountSettings />}
+          {tab === "gamemode" && <GameModeSettings />}
+          {tab === "interface" && <InterfaceSettings />}
+          {tab === "accessibility" && <AccessibilitySettings />}
+          {tab === "subscription" && <SubscriptionSettings />}
+          {tab === "social" && (
+            <ComingSoonPanel title="Social" text="Les amis et les clubs ne sont pas encore disponibles sur ChessIA." />
+          )}
+          {tab === "coach" && (
+            <ComingSoonPanel
+              title="Entraîneur"
+              text="Un entraîneur basé sur l'IA n'est pas encore disponible sur ChessIA."
+            />
+          )}
+          {tab === "notifications" && (
+            <ComingSoonPanel title="Notifications" text="ChessIA n'envoie pas encore de notifications." />
+          )}
         </div>
       </div>
     </div>

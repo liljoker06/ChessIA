@@ -32,9 +32,10 @@ const PIECE_UNICODE: Record<string, string> = {
 };
 
 export function Bots() {
+  const { settings } = useGameSettings();
   const [started, setStarted] = useState(false);
   const [colorChoice, setColorChoice] = useState<ColorChoice>("w");
-  const [difficultyId, setDifficultyId] = useState(DIFFICULTIES[1].id);
+  const [difficultyId, setDifficultyId] = useState(settings.defaultDifficultyId);
   const [playerColor, setPlayerColor] = useState<"w" | "b">("w");
 
   const gameRef = useRef(new Chess());
@@ -50,7 +51,6 @@ export function Bots() {
   const [pendingPromotion, setPendingPromotion] = useState<{ from: Square; to: Square } | null>(null);
 
   const difficulty = DIFFICULTIES.find((d) => d.id === difficultyId) ?? DIFFICULTIES[1];
-  const { settings } = useGameSettings();
   const { addGame } = useGameHistory();
   const boardTheme = BOARD_THEMES.find((t) => t.id === settings.boardThemeId) ?? BOARD_THEMES[0];
   const pieceStyle = PIECE_STYLES.find((p) => p.id === settings.pieceStyleId) ?? PIECE_STYLES[0];

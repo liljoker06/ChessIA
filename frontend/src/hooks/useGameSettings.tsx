@@ -1,19 +1,26 @@
-import { useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { DEFAULT_ACCENT_ID } from "../theme/accents";
 import { DEFAULT_BOARD_THEME_ID } from "../theme/boardThemes";
 import { DEFAULT_PIECE_STYLE_ID } from "../theme/pieceStyles";
 
 export interface GameSettings {
   boardThemeId: string;
   pieceStyleId: string;
+  accentId: string;
   showCoordinates: boolean;
   highlightLastMove: boolean;
+  defaultDifficultyId: string;
+  reduceMotion: boolean;
 }
 
 const DEFAULTS: GameSettings = {
   boardThemeId: DEFAULT_BOARD_THEME_ID,
   pieceStyleId: DEFAULT_PIECE_STYLE_ID,
+  accentId: DEFAULT_ACCENT_ID,
   showCoordinates: true,
   highlightLastMove: true,
+  defaultDifficultyId: "moyen",
+  reduceMotion: false,
 };
 
 const STORAGE_KEY = "chess-game-settings";
@@ -27,7 +34,14 @@ function readSettings(): GameSettings {
   }
 }
 
-export function useGameSettings() {
+interface GameSettingsContextValue {
+  settings: GameSettings;
+  update: <K extends keyof GameSettings>(key: K, value: GameSettings[K]) => void;
+}
+
+const GameSettingsContext = createContext<GameSettingsContextValue | null>(null);
+
+export function GameSettingsProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<GameSettings>(readSettings);
 
   useEffect(() => {
@@ -38,5 +52,11 @@ export function useGameSettings() {
     setSettings((s) => ({ ...s, [key]: value }));
   }
 
-  return { settings, update };
+  return <GameSettingsContext.Provider value={{ settings, update }}>{children}</GameSettingsContext.Provider>;
+}
+
+export function useGameSettings() {
+  const ctx = useContext(GameSettingsContext);
+  if (!ctx) throw new Error("useGameSettings must be used within GameSettingsProvider");
+  return ctx;
 }

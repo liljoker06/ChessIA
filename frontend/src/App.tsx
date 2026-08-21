@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Route, Routes } from "react-router-dom";
 import { MobileTopbar } from "./components/MobileTopbar";
 import { Sidebar } from "./components/Sidebar";
+import { useGameSettings } from "./hooks/useGameSettings";
 import { About } from "./pages/About";
 import { Bots } from "./pages/Bots";
 import { History } from "./pages/History";
@@ -11,11 +12,26 @@ import { Puzzles } from "./pages/Puzzles";
 import { Settings } from "./pages/Settings";
 import { Signup } from "./pages/Signup";
 import { Statistics } from "./pages/Statistics";
+import { ACCENTS } from "./theme/accents";
 import { Watch } from "./pages/Watch";
 import "./styles/ui.css";
 
 export default function App() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const { settings } = useGameSettings();
+
+  useEffect(() => {
+    const accent = ACCENTS.find((a) => a.id === settings.accentId) ?? ACCENTS[0];
+    const root = document.documentElement.style;
+    root.setProperty("--accent", accent.accent);
+    root.setProperty("--accent-strong", accent.accentStrong);
+    root.setProperty("--accent-rgb", accent.accentRgb);
+    root.setProperty("--accent-text", accent.accentText);
+  }, [settings.accentId]);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("reduce-motion", settings.reduceMotion);
+  }, [settings.reduceMotion]);
 
   return (
     <div className="app-shell">
