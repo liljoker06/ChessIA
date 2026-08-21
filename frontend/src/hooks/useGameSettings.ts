@@ -3,14 +3,12 @@ import { DEFAULT_BOARD_THEME_ID } from "../theme/boardThemes";
 
 export interface GameSettings {
   boardThemeId: string;
-  autoQueen: boolean;
   showCoordinates: boolean;
   highlightLastMove: boolean;
 }
 
 const DEFAULTS: GameSettings = {
   boardThemeId: DEFAULT_BOARD_THEME_ID,
-  autoQueen: false,
   showCoordinates: true,
   highlightLastMove: true,
 };

@@ -247,30 +247,6 @@
   font-size: 2.1rem;
 }
 
-.nav-links {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.nav-link {
-  color: var(--text-muted);
-  padding: 9px 16px;
-  border-radius: var(--radius-sm);
-  transition: color var(--duration-fast) ease;
-  text-decoration: none;
-  font-weight: 500;
-  font-size: 1.3rem;
-}
-
-.nav-link:hover {
-  color: var(--text-primary);
-}
-
-.nav-link.active {
-  color: var(--accent);
-}
-
 .nav-actions {
   display: flex;
   align-items: center;
@@ -285,12 +261,6 @@
 
 .nav .btn-ghost:hover:not(:disabled) {
   background: var(--surface-muted);
-}
-
-@media (max-width: 720px) {
-  .nav-links {
-    display: none;
-  }
 }
 
 /* Theme switch — sun/moon icons fixed in the track, knob slides between them. */
