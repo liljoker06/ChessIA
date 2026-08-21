@@ -209,3 +209,57 @@
   padding-left: 20px;
   font-size: 1.3rem;
 }
+
+.moves-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.moves-list-item-active {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.moves-list li:hover .replay-move-number,
+.moves-list li:hover .replay-move-san,
+.moves-list li:focus-within .replay-move-number,
+.moves-list li:focus-within .replay-move-san {
+  color: var(--accent);
+}
+
+.moves-list li:hover,
+.moves-list li:focus-within {
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  border-radius: 10px;
+}
+
+.replay-move-san {
+  transition: color 150ms ease;
+}
+
+.replay-move-number {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  border-radius: 999px;
+  transition: background-color 150ms ease, color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+}
+
+.replay-move-number:hover,
+.replay-move-number:focus-visible {
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+  outline: none;
+}
+
+.replay-move-number:active {
+  transform: translateY(1px);
+}

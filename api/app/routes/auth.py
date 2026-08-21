@@ -84,7 +84,9 @@ async def lichess_callback(request: Request):
         print(f"Joueur connecté : {lichess_user.get('username')} (Elo Blitz: {lichess_user.get('perfs', {}).get('blitz', {}).get('rating', 'N/A')})")
 
         blitz_elo = lichess_user.get('perfs', {}).get('blitz', {}).get('rating', None)
-        
+        perfs = lichess_user.get('perfs', {})
+        profile = lichess_user.get('profile', {})
+
         #  token aléatoire 32 caractères 
         token = secrets.token_urlsafe(32)
         
@@ -92,8 +94,15 @@ async def lichess_callback(request: Request):
             "id": lichess_user.get("id"),
             "username": lichess_user.get("username"),
             "email": "lichess@hidden.com",
-            "elo": blitz_elo,
-            "isLichess": True
+            "bio": profile.get("bio", "Aucune bio renseignée sur Lichess."),
+            "url": lichess_user.get("url"),
+            "stats": {
+                "blitz": perfs.get('blitz', {}).get('rating', 'Non classé'),
+                "bullet": perfs.get('bullet', {}).get('rating', 'Non classé'),
+                "rapid": perfs.get('rapid', {}).get('rating', 'Non classé'),
+            },
+            "isLichess": True,
+            "lichess_token": access_token
         }
 
         return RedirectResponse(url=f"{FRONTEND_URL}/oauth/callback?token={token}")

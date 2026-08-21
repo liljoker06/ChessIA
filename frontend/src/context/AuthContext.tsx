@@ -17,6 +17,12 @@ export interface AuthUser {
   isLichess?: boolean; 
   bio: string;
   createdAt: number;
+  url?: string;
+  stats?: {     
+    blitz: number | string;
+    bullet: number | string;
+    rapid: number | string;
+  };
 }
 
 interface AuthContextValue {
@@ -32,6 +38,7 @@ interface AuthContextValue {
 const USERS_KEY = "chess-users";
 const SESSION_KEY = "chess-session";
 const TOKEN_KEY = "chess-api-token";
+const API_URL = import.meta.env.VITE_API_URL; 
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
@@ -56,13 +63,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchProfileFromAPI = async (token: string) => {
     try {
-      const res = await fetch("http://localhost:8000/api/me", {
+      const res = await fetch(`${API_URL}/api/me`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!res.ok) throw new Error("Token expiré ou erreur serveur");
       
       const userData = await res.json();
-      setUser(userData); 
+      
+      setUser({
+        ...userData,
+        createdAt: Date.now() 
+      }); 
     } catch (err) {
       console.error(err);
       localStorage.removeItem(TOKEN_KEY);
@@ -70,16 +81,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // ⚡️ LE SEUL ET UNIQUE useEffect POUR INITIALISER LA SESSION
   useEffect(() => {
-    // Session locale classique
     const sessionId = localStorage.getItem(SESSION_KEY) ?? sessionStorage.getItem(SESSION_KEY);
     if (sessionId) {
       const found = readUsers().find((u) => u.id === sessionId);
       if (found) setUser(toPublicUser(found));
     }
 
-    // Session Lichess via ton API
     const apiToken = localStorage.getItem(TOKEN_KEY);
     if (apiToken) {
       fetchProfileFromAPI(apiToken);
@@ -134,6 +142,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const updateProfile = (bio: string) => {
     setUser((current) => {
       if (!current) return current;
+      if (current.isLichess) {
+        alert("La bio d'un compte Lichess doit être modifiée directement sur lichess.org");
+        return current;
+      }
+      
       const users = readUsers();
       const updated = users.map((u) => (u.id === current.id ? { ...u, bio } : u));
       writeUsers(updated);
@@ -143,6 +156,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const changePassword = (currentPassword: string, newPassword: string) => {
     if (!user) throw new Error("Non connecté.");
+    if (user.isLichess) {
+      throw new Error("La modification du mot de passe est gérée par Lichess.");
+    }
+
     const users = readUsers();
     const found = users.find((u) => u.id === user.id);
     if (!found || found.password !== currentPassword) {
