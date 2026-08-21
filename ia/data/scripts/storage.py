@@ -12,7 +12,7 @@ from botocore.client import Config
 from botocore.exceptions import ClientError
 from dotenv import load_dotenv
 
-load_dotenv(Path(__file__).resolve().parents[2] / ".env")
+load_dotenv(Path(__file__).resolve().parents[3] / ".env")
 
 RAW_BUCKET = os.environ.get("MINIO_RAW_BUCKET", "chessia-raw")
 PROCESSED_BUCKET = os.environ.get("MINIO_PROCESSED_BUCKET", "chessia-processed")

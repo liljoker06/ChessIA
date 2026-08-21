@@ -37,7 +37,7 @@ services:
       - "11434:11434"
     volumes:
       - ollama_data:/root/.ollama
-      - ./training/output:/models
+      - ./ia/training/output:/models
     deploy:
       resources:
         reservations:
@@ -47,14 +47,14 @@ services:
               capabilities: [gpu]
 
   training:
-    build: ./training
+    build: ./ia/training
     profiles: ["tools"]
     environment:
       HF_TOKEN: ${HF_TOKEN}
     volumes:
       - ./data:/data
-      - ./training/output:/output
-      - ./training/scripts:/app/scripts
+      - ./ia/training/output:/output
+      - ./ia/training/scripts:/app/scripts
     deploy:
       resources:
         reservations:
@@ -64,7 +64,7 @@ services:
               capabilities: [gpu]
 
   eval:
-    build: ./eval
+    build: ./ia/eval
     profiles: ["tools"]
     depends_on:
       - ollama
@@ -72,9 +72,9 @@ services:
       OLLAMA_URL: http://ollama:11434
     volumes:
       - ./data:/data
-      - ./training/output:/models
-      - ./eval/scripts:/app/scripts
-      - ./eval/results:/results
+      - ./ia/training/output:/models
+      - ./ia/eval/scripts:/app/scripts
+      - ./ia/eval/results:/results
 
 volumes:
   minio_data:
