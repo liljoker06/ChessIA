@@ -1,14 +1,17 @@
 import { useEffect, useState } from "react";
 import { DEFAULT_BOARD_THEME_ID } from "../theme/boardThemes";
+import { DEFAULT_PIECE_STYLE_ID } from "../theme/pieceStyles";
 
 export interface GameSettings {
   boardThemeId: string;
+  pieceStyleId: string;
   showCoordinates: boolean;
   highlightLastMove: boolean;
 }
 
 const DEFAULTS: GameSettings = {
   boardThemeId: DEFAULT_BOARD_THEME_ID,
+  pieceStyleId: DEFAULT_PIECE_STYLE_ID,
   showCoordinates: true,
   highlightLastMove: true,
 };

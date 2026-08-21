@@ -1,0 +1,65 @@
+.bots-setup-page {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+}
+
+.bots-setup-card {
+  width: 100%;
+  max-width: 480px;
+}
+
+.bots-setup-card h1 {
+  margin-bottom: 8px;
+}
+
+.bots-setup-subtitle {
+  color: var(--text-muted);
+  margin-bottom: 32px;
+}
+
+.choice-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.bots-page {
+  flex: 1;
+  padding: 32px 24px 64px;
+  display: flex;
+  justify-content: center;
+}
+
+.promotion-choices {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.promotion-choice {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  cursor: pointer;
+  transition: background-color var(--duration-fast) ease, transform var(--duration-fast) var(--ease-out);
+  font-size: 1.2rem;
+  color: var(--text-primary);
+}
+
+.promotion-choice:hover {
+  background: var(--surface-muted);
+  transform: translateY(-2px);
+}
+
+.promotion-choice .piece {
+  font-size: 2.4rem;
+}

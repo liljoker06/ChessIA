@@ -64,14 +64,15 @@
 }
 
 .piece-w {
-  color: #fbf3d8;
-  -webkit-text-stroke: 1.5px #312e2b;
+  color: var(--piece-w-fill, #ffffff);
+  -webkit-text-stroke: 1px var(--piece-w-stroke, #000000);
+  paint-order: stroke fill;
   text-shadow: 0 2px 2px rgba(0, 0, 0, 0.35);
 }
 
 .piece-b {
-  color: #1a1714;
-  -webkit-text-stroke: 1px #1a1714;
+  color: var(--piece-b-fill, #000000);
+  -webkit-text-stroke: 1px var(--piece-b-stroke, #000000);
   text-shadow: 0 1px 1px rgba(0, 0, 0, 0.25);
 }
 

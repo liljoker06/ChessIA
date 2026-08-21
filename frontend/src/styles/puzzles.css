@@ -1,0 +1,41 @@
+.puzzles-page {
+  flex: 1;
+  padding: 32px 24px 64px;
+}
+
+.puzzles-layout {
+  display: flex;
+  justify-content: center;
+}
+
+.puzzles-header {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.puzzles-progress {
+  display: block;
+  color: var(--text-muted);
+  font-size: 1.2rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 8px;
+}
+
+.puzzles-header h2 {
+  margin-bottom: 8px;
+}
+
+.puzzles-description {
+  color: var(--text-muted);
+  margin-bottom: 0;
+}
+
+.puzzles-status-wrong {
+  background: var(--danger);
+  color: #fff;
+}
