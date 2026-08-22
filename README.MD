@@ -23,15 +23,10 @@ School project: fine-tune an LLM to play chess, serve it locally, and watch it p
 
 ### Présentation
 
-<div align="center">
-  <video src="./Présentation%20ChessAI.mp4" controls width="720" playsinline></video>
-</div>
-
+https://github.com/user-attachments/assets/e2d28471-9f5d-426a-a152-716cc357aab5
 ### MLflow
 
-<div align="center">
-  <video src="./ML%20Flow%20ChessAI.mp4" controls width="720" playsinline></video>
-</div>
+https://github.com/user-attachments/assets/1faba81c-481d-4167-8857-90553c340bcb
 
 ---
 
