@@ -2,9 +2,9 @@
 
 # ChessIA
 
-**Watching an AI play chess — including for real, live, on Lichess.**
+**An LLM that plays chess — locally, or for real on Lichess, live.**
 
-School project: fine-tune an LLM to play chess, serve it locally, and watch it play move by move in the browser — or let it play an actual game on Lichess through the Bot API.
+School project: fine-tune a language model to play chess, serve it through Ollama, and watch it play — from a quick local demo to an actual rated-adjacent game on a real chess server.
 
 [![React](https://img.shields.io/badge/React-19-149ECA?logo=react&logoColor=white)](frontend)
 [![FastAPI](https://img.shields.io/badge/FastAPI-API-009688?logo=fastapi&logoColor=white)](api)
@@ -31,31 +31,42 @@ School project: fine-tune an LLM to play chess, serve it locally, and watch it p
 
 ---
 
-## What this is
+## How it works, in one paragraph
 
-Not a bot to chat with, not an opponent to face: **you watch**. A model plays a real game — against Lichess's built-in AI, or against a specific player/bot you challenge — one move at a time, live on the board, with a real clock ticking. Or, if you'd rather not touch the Lichess account, it can just play itself locally in the browser.
+A chess-specialized LLM ([`Qwen2.5-Coder-0.5B`, RL-tuned on Lichess puzzles](https://huggingface.co/alexneakameni/Qwen2.5-Coder-0.5B-Instruct-chess-grpo)) is fine-tuned further on real Lichess games, exported to GGUF, and served by **Ollama**. A **FastAPI** backend feeds it positions one at a time — either to drive a local demo, or to actually play a live game on **Lichess** via the Bot API, submitting real moves on a real board. The **React** frontend shows either in real time. Everything — data prep, training, evaluation, and the live game loop — runs locally, GPU included.
 
-What makes it interesting: the "brain" isn't a classic chess engine (minimax + evaluation), it's an **LLM fine-tuned** to produce legal moves from a position. The central question of the project: *how many examples does it take for a small model to learn to reliably follow the rules of the game?* — and, once that's answered, watching the result play an actual rated-adjacent game on a real chess server.
+## Game modes
 
-## What works today
+The app offers two fundamentally different ways to watch (or set up) a game, both reachable from the **"Play vs bot"** page:
 
-- **Frontend** (React + TypeScript + Vite) — interactive board with animated piece moves, game history, Lichess OAuth login, and two ways to watch a game:
-  - **Local**: pick a color/difficulty, the model plays against a local Stockfish (WASM) instantly, no account needed.
-  - **Live on Lichess**: pick an opponent (Lichess's built-in AI, or a specific player/bot you challenge), a time control (Bullet → Correspondence), and a variant (Standard, Chess960, Crazyhouse, Atomic, King of the Hill, Racing Kings, Horde, Three-check, Antichess) — the game is streamed live via Server-Sent Events, with a real countdown clock and a clear "our AI plays White/Black" indicator.
-- **API** (FastAPI) — Lichess OAuth (PKCE, `bot:play`/`challenge:write` scopes), a Bot API client (`api/app/services/lichess_bot.py`) that creates/streams/plays real Lichess games, and the move-generation bridge to Ollama (`api/app/services/ollama_chess.py`).
-- **Data pipeline** (`ia/data`) — streamed parsing of a Lichess PGN dump (29 GB compressed → never extracted to disk), filtering by Elo and Stockfish eval, JSONL export, all backed by MinIO as S3-compatible storage.
-- **Fine-tuning** (`ia/training`) — LoRA via Unsloth, GGUF export, automatic registration as an Ollama model, every run tracked in **MLflow** (params, loss curves, and downstream eval metrics linked to the same run).
-- **Evaluation** (`ia/eval`) — the model plays against Stockfish (very weak level) in a dedicated container, binary verdict: fully legal game or not, logged to MLflow alongside the training run that produced the model.
+| | **Local** | **Live on Lichess** |
+|---|---|---|
+| **Opponent** | Stockfish, running in your browser (WASM) | Lichess's built-in AI (levels 1-8), *or* a specific player/bot you challenge by username |
+| **Who's actually "the AI"?** | Just a chess engine — no LLM, no account, purely a UI demo | Our fine-tuned LLM, via Ollama, making every move |
+| **Account needed?** | No | Yes — your Lichess account (connected via OAuth) |
+| **Time control** | Fixed per difficulty preset | Your choice: Bullet, Blitz, Rapid, Classical, or Correspondence |
+| **Variant** | Standard only | Standard, Chess960, Crazyhouse, Atomic, King of the Hill, Racing Kings, Horde, Three-check, Antichess |
+| **Rated** | N/A | Optional, for player/bot challenges |
+| **How you watch** | Instant, in-page | Streamed live (Server-Sent Events): real countdown clock, animated piece moves, a clear "our AI plays White/Black" indicator |
+| **Where it happens** | Nowhere but your browser | A real game on lichess.org — spectators on Lichess can watch too |
 
-Everything runs locally, GPU included (tested on an RTX 5070 Ti / Blackwell).
+There's also a **pure spectator mode** ("Watch") reachable from the home page: the local engine plays both sides of a game by itself, for a quick "just show me something moving" demo with no setup at all.
+
+### Why a real Lichess account is involved
+
+To let an account *play* moves programmatically (not just fetch data), Lichess requires it to be upgraded to a **BOT account** — a one-time, **irreversible** change (a bot account can only ever play bot/challenge games afterward, never normal rated matchmaking). This project's connected account has been upgraded on purpose for exactly this use case.
+
+### What happens if the model messes up mid-game
+
+Unlike the local evaluation harness (which just marks a game "failed"), a live Lichess game can't be left hanging. If the model fails to produce a legal move after 3 retries, the API automatically **resigns the game** rather than stalling — safe by construction, no game (and no account) ever gets stuck.
 
 ## What we learned
 
-First full sweep: Gemma 2 2B, LoRA, dataset sizes from 5,000 to 30,000 FEN→move examples (filtered to Elo 1800-2200). Result: **0 legal games out of 5, at every single size**. The model breaks down on its very first move — not for lack of general chess knowledge (it clearly has some: its raw completions reference real openings, real players, real chess trivia), but because the "respond with only a move" format doesn't hold at this fine-tuning scale.
+First full sweep: Gemma 2 2B, LoRA, dataset sizes from 5,000 to 30,000 FEN→move examples (filtered to Elo 1800-2200). Result: **0 legal games out of 5, at every single size**. The model breaks down on its very first move — not for lack of general chess knowledge (its raw completions reference real openings, real players, real chess trivia), but because the "respond with only a move" format doesn't hold at this fine-tuning scale.
 
-Pivot: started from a model that's already chess-specialized instead of a generalist — [`Qwen2.5-Coder-0.5B` fine-tuned via RL on Lichess puzzles](https://huggingface.co/alexneakameni/Qwen2.5-Coder-0.5B-Instruct-chess-grpo), used as-is (no further training from us yet). Clear improvement: the model now plays **2 to 10 legal moves in a row** per game instead of failing immediately — still not a fully clean game every time, but real, coherent chess (an actual sequence like `Nh3 Nc6 Ng5 d5 Nxh7 Bf5 Nxf8 Nf6` came out of one run). It's now proven live on Lichess itself, complete with a resign-as-fallback safety net so a bad generation never leaves a game stuck.
+Pivot: start from a model that's already chess-specialized instead of a generalist. Clear improvement — **2 to 10 legal moves in a row** per game instead of failing immediately (an actual sequence like `Nh3 Nc6 Ng5 d5 Nxh7 Bf5 Nxf8 Nf6` came out of one run), now proven live on Lichess itself. Continuing to fine-tune that same specialist on our own filtered data (10k examples) didn't clearly improve on a small sample — inconclusive so far, tracked in MLflow for the next iteration.
 
-Details, the full pipeline, and next steps in [`ia/README.md`](ia/README.md).
+Full details, exact numbers, and the pipeline that produced them: [`ia/README.md`](ia/README.md).
 
 ## Architecture
 
@@ -114,7 +125,7 @@ docker compose up -d        # MinIO + Ollama + MLflow
 - API: `cd api/app && ../venv/Scripts/python.exe -m uvicorn main:app --reload`
 - Frontend: `cd frontend && npm install && npm run dev`
 
-To let the API actually play on Lichess, the connected account must be [upgraded to a BOT account](https://lichess.org/api#tag/Bot/operation/botAccountUpgrade) (irreversible — it can then only ever play bot games, never rated matchmaking again).
+To let the API actually play on Lichess, the connected account must be [upgraded to a BOT account](https://lichess.org/api#tag/Bot/operation/botAccountUpgrade) (see [Why a real Lichess account is involved](#why-a-real-lichess-account-is-involved) above — irreversible).
 
 ## Structure
 
@@ -142,7 +153,7 @@ ChessIA/
 - [x] Experiment tracking (MLflow)
 - [x] Wire the API to Ollama and the Lichess Bot API — the model plays real games
 - [x] Live display on the frontend (Server-Sent Events), with clock, animations, and opponent/variant/time-control selection
-- [ ] Continue fine-tuning the chess-specialized base model on our own filtered Lichess data
+- [ ] Get a clearly better legal-move rate out of continued fine-tuning
 - [ ] Model size comparison (0.5B / 2B / 3B / 8B) for the report
 
 ---
