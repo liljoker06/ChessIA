@@ -30,6 +30,21 @@ services:
       exit 0
       "
 
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:latest
+    container_name: chessia-mlflow
+    ports:
+      - "5000:5000"
+    volumes:
+      - mlflow_data:/mlflow
+    command: >
+      mlflow server
+      --backend-store-uri sqlite:////mlflow/mlflow.db
+      --default-artifact-root /mlflow/artifacts
+      --host 0.0.0.0
+      --port 5000
+      --allowed-hosts "mlflow:5000,localhost:5000,127.0.0.1:5000"
+
   ollama:
     image: ollama/ollama:latest
     container_name: chessia-ollama
@@ -49,8 +64,12 @@ services:
   training:
     build: ./ia/training
     profiles: ["tools"]
+    user: "0:0"
+    depends_on:
+      - mlflow
     environment:
       HF_TOKEN: ${HF_TOKEN}
+      MLFLOW_TRACKING_URI: http://mlflow:5000
     volumes:
       - ./data:/data
       - ./ia/training/output:/output
@@ -68,8 +87,10 @@ services:
     profiles: ["tools"]
     depends_on:
       - ollama
+      - mlflow
     environment:
       OLLAMA_URL: http://ollama:11434
+      MLFLOW_TRACKING_URI: http://mlflow:5000
     volumes:
       - ./data:/data
       - ./ia/training/output:/models
@@ -79,3 +100,4 @@ services:
 volumes:
   minio_data:
   ollama_data:
+  mlflow_data:

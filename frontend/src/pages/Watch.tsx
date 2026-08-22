@@ -29,7 +29,36 @@ const PIECE_UNICODE: Record<string, string> = {
 
 type WatchLocationState = {
   replayGame?: HistoryGame;
+  liveGameId?: string;
 };
+
+type LiveEvent = {
+  fen: string;
+  moves: string; // space-separated UCI moves played so far
+  last_move: string | null;
+  status: string | null;
+  turn: "w" | "b";
+  bot_color?: "w" | "b";
+  error?: string;
+  speed?: string;
+  perf?: string;
+  clock_initial_ms?: number;
+  clock_increment_ms?: number;
+  white_ai_level?: number;
+  black_ai_level?: number;
+  wtime_ms?: number;
+  btime_ms?: number;
+};
+
+function formatClock(ms: number | undefined): string {
+  if (ms === undefined) return "--:--";
+  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+}
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 function parseReplayMoves(pgn: string): string[] {
   const moveSection = pgn
@@ -78,6 +107,10 @@ export function Watch() {
   const locationState = location.state as WatchLocationState | null;
   const [replayGameState, setReplayGameState] = useState<HistoryGame | undefined>(locationState?.replayGame);
   const isReplayMode = replayGameState !== undefined;
+
+  const [liveGameId, setLiveGameId] = useState<string | undefined>(locationState?.liveGameId);
+  const [liveEvent, setLiveEvent] = useState<LiveEvent | null>(null);
+  const isLiveMode = liveGameId !== undefined && !isReplayMode;
   const { settings } = useGameSettings();
   const boardTheme = BOARD_THEMES.find((t) => t.id === settings.boardThemeId) ?? BOARD_THEMES[0];
   const pieceStyle = PIECE_STYLES.find((p) => p.id === settings.pieceStyleId) ?? PIECE_STYLES[0];
@@ -108,13 +141,99 @@ export function Watch() {
     return last ? { from: last.from as Square, to: last.to as Square } : null;
   }, [replayGameState, replayGame, replayIndex]);
 
-  const game = replayGameState ? replayGame ?? gameRef.current : gameRef.current;
+  const liveGame = useMemo(() => {
+    if (!isLiveMode || !liveEvent) return null;
+    // Replay every UCI move from scratch (rather than just loading the
+    // current FEN) so chess.js has full move history -- needed for the
+    // moves list and captures panel to work in live mode.
+    const chess = new Chess();
+    for (const uci of (liveEvent.moves ?? "").split(" ").filter(Boolean)) {
+      try {
+        chess.move({ from: uci.slice(0, 2), to: uci.slice(2, 4), promotion: uci.slice(4, 5) || undefined });
+      } catch {
+        break;
+      }
+    }
+    return chess;
+  }, [isLiveMode, liveEvent]);
+
+  const liveLastMove = useMemo(() => {
+    if (!liveEvent?.last_move) return null;
+    const uci = liveEvent.last_move;
+    return { from: uci.slice(0, 2) as Square, to: uci.slice(2, 4) as Square };
+  }, [liveEvent]);
+
+  const game = isLiveMode ? liveGame ?? new Chess() : replayGameState ? replayGame ?? gameRef.current : gameRef.current;
   const rerender = () => setVersion((v) => v + 1);
 
   const board = game.board();
   const turn = game.turn();
   const inCheck = game.inCheck();
   const isGameOver = game.isGameOver();
+  const liveWaiting = isLiveMode && liveEvent?.status === "waiting_for_opponent";
+  const liveFinished =
+    isLiveMode &&
+    liveEvent?.status !== null &&
+    liveEvent?.status !== undefined &&
+    liveEvent?.status !== "started" &&
+    liveEvent?.status !== "waiting_for_opponent";
+  const isGameOverEffective = isLiveMode ? isGameOver || liveFinished : isGameOver;
+
+  // No liveGameId passed via navigation (e.g. page refresh) -- check if this
+  // session already has a live game running.
+  useEffect(() => {
+    if (liveGameId || isReplayMode) return;
+    const token = localStorage.getItem("chess-api-token");
+    if (!token) return;
+
+    fetch(`${API_URL}/api/play/current`, { headers: { Authorization: `Bearer ${token}` } })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.game_id) setLiveGameId(data.game_id);
+      })
+      .catch(() => {});
+  }, [liveGameId, isReplayMode]);
+
+  // The SSE stream only pushes an update on every move, not every second --
+  // tick a local render every 250ms while live so the clock visibly counts down.
+  const lastEventAtRef = useRef(Date.now());
+  const [, setClockTick] = useState(0);
+
+  useEffect(() => {
+    if (!isLiveMode || !liveGameId) return;
+
+    const source = new EventSource(`${API_URL}/api/play/stream/${liveGameId}`);
+    source.onmessage = (msg) => {
+      try {
+        setLiveEvent(JSON.parse(msg.data));
+        lastEventAtRef.current = Date.now();
+      } catch {
+        // ignore malformed events
+      }
+    };
+    source.onerror = () => source.close();
+    return () => source.close();
+  }, [isLiveMode, liveGameId]);
+
+  useEffect(() => {
+    if (!isLiveMode || liveFinished) return;
+    const id = window.setInterval(() => setClockTick((t) => t + 1), 250);
+    return () => window.clearInterval(id);
+  }, [isLiveMode, liveFinished]);
+
+  const displayedWtimeMs = useMemo(() => {
+    if (liveEvent?.wtime_ms === undefined) return undefined;
+    const elapsed = turn === "w" ? Date.now() - lastEventAtRef.current : 0;
+    return Math.max(0, liveEvent.wtime_ms - elapsed);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [liveEvent, turn, /* re-run every tick: */ Math.floor(Date.now() / 250)]);
+
+  const displayedBtimeMs = useMemo(() => {
+    if (liveEvent?.btime_ms === undefined) return undefined;
+    const elapsed = turn === "b" ? Date.now() - lastEventAtRef.current : 0;
+    return Math.max(0, liveEvent.btime_ms - elapsed);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [liveEvent, turn, Math.floor(Date.now() / 250)]);
 
   useEffect(() => {
     if (!isReplayMode) return;
@@ -142,7 +261,7 @@ export function Watch() {
 
   // The engine drives both sides of the board — it's one AI playing out a full game, not two AIs facing off.
   useEffect(() => {
-    if (isReplayMode) return;
+    if (isReplayMode || isLiveMode) return;
 
     const whiteEngine = new StockfishEngine();
     const blackEngine = new StockfishEngine();
@@ -161,18 +280,18 @@ export function Watch() {
       blackEngine.terminate();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isReplayMode]);
+  }, [isReplayMode, isLiveMode]);
 
   // A difficulty change takes effect starting with the next move played.
   useEffect(() => {
-    if (isReplayMode) return;
+    if (isReplayMode || isLiveMode) return;
     whiteEngineRef.current?.setSkillLevel(difficulty.skillLevel);
     blackEngineRef.current?.setSkillLevel(difficulty.skillLevel);
-  }, [difficulty, isReplayMode]);
+  }, [difficulty, isReplayMode, isLiveMode]);
 
   // Whenever it's a side's turn (and playback is running), ask the engine for a move.
   useEffect(() => {
-    if (isReplayMode || !enginesReady || !running || isGameOver) return;
+    if (isReplayMode || isLiveMode || !enginesReady || !running || isGameOver) return;
     const engine = turn === "w" ? whiteEngineRef.current : blackEngineRef.current;
     const movetimeMs = difficulty.movetimeMs;
     if (!engine) return;
@@ -194,7 +313,7 @@ export function Watch() {
       engine.stop();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [version, running, enginesReady, isReplayMode]);
+  }, [version, running, enginesReady, isReplayMode, isLiveMode]);
 
   useEffect(() => {
     if (!isReplayMode) return;
@@ -231,6 +350,15 @@ export function Watch() {
     if (isReplayMode) {
       return `Relecture de la partie du ${new Date(replayGameState.date).toLocaleDateString("fr-FR")} (${replayIndex}/${replayMoves.length}).`;
     }
+    if (isLiveMode) {
+      if (!liveEvent) return "Connexion à la partie Lichess…";
+      if (liveEvent.status === "waiting_for_opponent") return "En attente que l'adversaire accepte le défi…";
+      if (liveEvent.status === "challenge_expired") return "Le défi n'a pas été accepté à temps (annulé).";
+      if (liveEvent.status === "resigned") return "L'IA a abandonné (coup illégal généré).";
+      if (liveEvent.status === "error") return "Erreur de connexion à la partie.";
+      if (liveFinished) return "Partie terminée.";
+      return `Trait aux ${turn === "w" ? "Blancs" : "Noirs"} — partie en direct sur Lichess`;
+    }
     if (game.isCheckmate()) return `Échec et mat — les ${turn === "w" ? "Noirs" : "Blancs"} gagnent.`;
     if (game.isStalemate()) return "Pat — partie nulle.";
     if (game.isThreefoldRepetition()) return "Nulle par répétition.";
@@ -243,7 +371,7 @@ export function Watch() {
     if (inCheck) return `Échec au roi ${turn === "w" ? "blanc" : "noir"} !`;
     return `Trait aux ${turn === "w" ? "Blancs" : "Noirs"}`;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [game, version, turn, inCheck, thinking, running, enginesReady, isReplayMode, replayGameState, replayIndex, replayMoves.length]);
+  }, [game, version, turn, inCheck, thinking, running, enginesReady, isReplayMode, replayGameState, replayIndex, replayMoves.length, isLiveMode, liveEvent, liveFinished]);
 
   function handleNewGame() {
     setReplayGameState(undefined);
@@ -280,41 +408,71 @@ export function Watch() {
     <div className="watch-page">
       <div className="watch-layout">
         <div className="board-column">
-          <div className="card match-controls">
-            <div className="difficulty-picker">
-              <label>
-                <span className="difficulty-label">Niveau de l'IA</span>
-                <select
-                  className="input"
-                  value={difficultyId}
-                  onChange={(e) => setDifficultyId(e.target.value)}
+          {!isLiveMode && (
+            <div className="card match-controls">
+              <div className="difficulty-picker">
+                <label>
+                  <span className="difficulty-label">Niveau de l'IA</span>
+                  <select
+                    className="input"
+                    value={difficultyId}
+                    onChange={(e) => setDifficultyId(e.target.value)}
+                  >
+                    {DIFFICULTIES.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+              <div className="match-actions">
+                <button
+                  className="btn btn-ghost btn-sm"
+                  onClick={handleReplayToggle}
+                  disabled={!isReplayMode && (!enginesReady || isGameOver)}
                 >
-                  {DIFFICULTIES.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
+                  {running ? <Pause size={16} /> : <Play size={16} />}
+                  {running ? "Pause" : "Reprendre"}
+                </button>
+                <button className="btn btn-primary btn-sm" onClick={handleNewGame}>
+                  <RotateCcw size={16} />
+                  Nouvelle partie
+                </button>
+              </div>
             </div>
-            <div className="match-actions">
-              <button
-                className="btn btn-ghost btn-sm"
-                onClick={handleReplayToggle}
-                disabled={!isReplayMode && (!enginesReady || isGameOver)}
-              >
-                {running ? <Pause size={16} /> : <Play size={16} />}
-                {running ? "Pause" : "Reprendre"}
-              </button>
-              <button className="btn btn-primary btn-sm" onClick={handleNewGame}>
-                <RotateCcw size={16} />
-                Nouvelle partie
-              </button>
+          )}
+
+          {isLiveMode && liveEvent && !liveWaiting && liveEvent.fen && (
+            <div className="card match-controls">
+              <div className="live-info">
+                <span className="badge">
+                  {liveEvent.perf ?? liveEvent.speed ?? "Partie"}
+                  {liveEvent.clock_initial_ms != null &&
+                    ` · ${Math.round(liveEvent.clock_initial_ms / 60000)}+${Math.round((liveEvent.clock_increment_ms ?? 0) / 1000)}`}
+                  {" · vs. IA Lichess"}
+                  {liveEvent.white_ai_level != null && ` niveau ${liveEvent.white_ai_level}`}
+                  {liveEvent.black_ai_level != null && ` niveau ${liveEvent.black_ai_level}`}
+                </span>
+                {liveEvent.bot_color && (
+                  <span className={`badge badge-bot-color badge-bot-color-${liveEvent.bot_color}`}>
+                    Notre IA joue les {liveEvent.bot_color === "w" ? "Blancs" : "Noirs"}
+                  </span>
+                )}
+              </div>
+              <div className="match-actions live-clocks">
+                <span className={`live-clock ${turn === "b" ? "live-clock-active" : ""} ${liveEvent.bot_color === "b" ? "live-clock-bot" : ""}`}>
+                  ♟ {formatClock(displayedBtimeMs)}
+                </span>
+                <span className={`live-clock ${turn === "w" ? "live-clock-active" : ""} ${liveEvent.bot_color === "w" ? "live-clock-bot" : ""}`}>
+                  ♙ {formatClock(displayedWtimeMs)}
+                </span>
+              </div>
             </div>
-          </div>
+          )}
 
           <div
-            className={`status-bar ${inCheck && !isGameOver ? "status-check" : ""} ${
+            className={`status-bar ${inCheck && !isGameOverEffective ? "status-check" : ""} ${
               thinking ? "status-thinking" : ""
             }`}
           >
@@ -326,7 +484,7 @@ export function Watch() {
             board={board}
             selected={null}
             legalTargets={[]}
-            lastMove={replayGameState ? replayLastMove : lastMove}
+            lastMove={isLiveMode ? liveLastMove : replayGameState ? replayLastMove : lastMove}
             checkSquare={checkSquare}
             orientation={orientation}
             disabled
@@ -413,7 +571,7 @@ export function Watch() {
         </aside>
       </div>
 
-      {!replayGameState && isGameOver && (
+      {!replayGameState && !isLiveMode && isGameOver && (
         <div className="modal-backdrop">
           <div className="modal">
             <h2>Partie terminée</h2>
@@ -422,6 +580,20 @@ export function Watch() {
               <button className="btn btn-primary" onClick={handleNewGame}>
                 Nouvelle partie
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isLiveMode && liveFinished && (
+        <div className="modal-backdrop">
+          <div className="modal">
+            <h2>Partie terminée</h2>
+            <p>{statusText}</p>
+            <div className="modal-actions">
+              <a className="btn btn-primary" href={`https://lichess.org/${liveGameId}`} target="_blank" rel="noreferrer">
+                Voir sur Lichess
+              </a>
             </div>
           </div>
         </div>

@@ -69,6 +69,40 @@
   flex-wrap: wrap;
 }
 
+.live-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.badge-bot-color {
+  background: var(--accent, #4a7c59);
+  color: #fff;
+}
+
+.live-clocks {
+  gap: 16px;
+}
+
+.live-clock {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--text-muted);
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  border: 2px solid transparent;
+}
+
+.live-clock-active {
+  color: var(--text);
+  background: var(--surface-hover, rgba(255, 255, 255, 0.08));
+}
+
+.live-clock-bot {
+  border-color: var(--accent, #4a7c59);
+}
+
 .status-bar {
   padding: 12px 24px;
   border-radius: var(--radius-sm);
