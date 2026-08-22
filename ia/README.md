@@ -1,27 +1,26 @@
-# IA — pipeline données + fine-tuning + évaluation
+# IA — data pipeline + fine-tuning + evaluation
 
-Tout ce qui construit et évalue le modèle d'échecs vit ici, en trois étapes :
-`ia/data` (parsing/dataset), `ia/training` (fine-tuning LoRA + export GGUF),
-`ia/eval` (parties contre Stockfish). Le fichier brut Lichess (`.pgn.zst`) et
-les datasets générés restent dans [`data/`](../data/README.MD) à la racine —
-`ia/` ne contient que le code. Tous les runs (training + eval) sont tracés
-dans **MLflow**.
+Everything that builds and evaluates the chess model lives here, in three
+stages: `ia/data` (parsing/dataset), `ia/training` (LoRA fine-tuning + GGUF
+export), `ia/eval` (games against Stockfish). The raw Lichess file
+(`.pgn.zst`) and the generated datasets stay in [`data/`](../data/README.MD)
+at the repo root — `ia/` only holds code. Every run (training + eval) is
+tracked in **MLflow**.
 
-## 1. Démarrer MinIO + Ollama + MLflow
+## 1. Start MinIO + Ollama + MLflow
 
 ```bash
-cp ../.env.example ../.env   # remplir MINIO_ROOT_USER / MINIO_ROOT_PASSWORD
+cp ../.env.example ../.env   # fill in MINIO_ROOT_USER / MINIO_ROOT_PASSWORD
 docker compose up -d
 ```
 
-Les buckets `chessia-raw`/`chessia-processed` sont créés automatiquement.
-MinIO : http://localhost:9001. Ollama : http://localhost:11434.
-MLflow : http://localhost:5000 (historique des runs, courbes de loss,
-métriques d'éval).
+The `chessia-raw`/`chessia-processed` buckets are created automatically.
+MinIO: http://localhost:9001. Ollama: http://localhost:11434.
+MLflow: http://localhost:5000 (run history, loss curves, eval metrics).
 
-## 2. `ia/data` — parsing et dataset
+## 2. `ia/data` — parsing and dataset
 
-Environnement Python séparé (outils batch/CLI, pas de GPU nécessaire ici) :
+Separate Python environment (batch/CLI tooling, no GPU needed here):
 
 ```bash
 cd ia/data
@@ -30,27 +29,27 @@ venv\Scripts\activate   # Windows
 pip install -r requirements.txt
 ```
 
-### Parser l'archive brute (`parse_pgn.py`)
+### Parse the raw archive (`parse_pgn.py`)
 
-Lit le `.pgn.zst` en streaming, rejoue chaque partie avec `python-chess` et
-émet un enregistrement JSONL par coup joué (`fen`, `move`, elos, `eval_cp`/
-`eval_mate`, `game_id`, `ply_index`) vers `chessia-raw`. **Aucun filtrage
-qualité ici** — seulement un pré-filtre Elo optionnel et bon marché (voir
-avertissement plus bas).
+Streams the `.pgn.zst`, replays every game with `python-chess`, and emits
+one JSONL record per move played (`fen`, `move`, ratings, `eval_cp`/
+`eval_mate`, `game_id`, `ply_index`) to `chessia-raw`. **No quality
+filtering here** — only a cheap, optional Elo pre-filter (see the warning
+below).
 
 ```bash
 python scripts/parse_pgn.py \
   --input ../../data/lichess_db_standard_rated_2026-07.pgn.zst \
   --output-key raw/2026-07.jsonl.zst \
-  --limit-games 200   # smoke-test rapide ; retirer pour un run complet
+  --limit-games 200   # quick smoke test; drop this for a full run
 ```
 
-### Construire le dataset final (`build_dataset.py`)
+### Build the final dataset (`build_dataset.py`)
 
-Lit l'intermédiaire depuis `chessia-raw`, applique le vrai filtrage qualité
-(plage d'Elo 1800-2200 par défaut, filtre eval optionnel), échantillonne
-jusqu'à `--max-examples`, et écrit `{"fen", "move"}` dans `data/processed/`
-et sur `chessia-processed`.
+Reads the intermediate file from `chessia-raw`, applies the real quality
+filter (Elo range 1800-2200 by default, optional eval filter), samples up
+to `--max-examples`, and writes `{"fen", "move"}` to `data/processed/` and
+to `chessia-processed`.
 
 ```bash
 python scripts/build_dataset.py \
@@ -60,12 +59,12 @@ python scripts/build_dataset.py \
   --max-examples 1000
 ```
 
-## 3. `ia/training` — obtenir un modèle GGUF servi par Ollama
+## 3. `ia/training` — get a GGUF model served by Ollama
 
-Conteneur Docker (CUDA + Unsloth), pas de venv local nécessaire. Deux façons
-d'y arriver :
+Docker container (CUDA + Unsloth), no local venv needed. Two ways to get
+there:
 
-### 3a. Fine-tuner depuis zéro sur nos données (`finetune.py`)
+### 3a. Fine-tune from scratch on our data (`finetune.py`)
 
 ```bash
 docker compose run --rm training scripts/finetune.py \
@@ -74,14 +73,14 @@ docker compose run --rm training scripts/finetune.py \
   --output-dir /output/gemma2-2b-5000
 ```
 
-Logue automatiquement dans MLflow (params + courbe de loss) via
-`report_to=["mlflow"]`, et écrit `mlflow_run_id.txt` à côté du GGUF pour que
-l'étape d'évaluation (section 4) rattache ses métriques au même run.
+Automatically logs to MLflow (params + loss curve) via
+`report_to=["mlflow"]`, and writes `mlflow_run_id.txt` next to the GGUF so
+the evaluation step (section 4) can attach its metrics to the same run.
 
-### 3b. Exporter un modèle existant tel quel (`export_gguf.py`)
+### 3b. Export an existing model as-is (`export_gguf.py`)
 
-Pour utiliser un modèle Hugging Face déjà entraîné (ex. un modèle chess
-spécialisé) sans fine-tuning supplémentaire :
+To use an already-trained Hugging Face model (e.g. a chess-specialized one)
+with no further fine-tuning:
 
 ```bash
 docker compose run --rm training scripts/export_gguf.py \
@@ -89,7 +88,7 @@ docker compose run --rm training scripts/export_gguf.py \
   --output-dir /output/chess-grpo-05b
 ```
 
-### Enregistrer le GGUF comme modèle Ollama (`register_ollama_model.py`)
+### Register the GGUF as an Ollama model (`register_ollama_model.py`)
 
 ```bash
 docker compose run --rm training scripts/register_ollama_model.py \
@@ -99,23 +98,23 @@ docker compose run --rm training scripts/register_ollama_model.py \
   --system-prompt "..."
 ```
 
-- `--run-dir` : cherche récursivement le `.gguf` dans le dossier du run
-  (Unsloth l'écrit dans un sous-dossier `<nom>_gguf/`, pas dans le dossier
-  demandé — géré automatiquement).
-- `--template chatml` : force le template ChatML (Qwen2/Qwen2.5) côté
-  Ollama — nécessaire car Ollama ne reprend pas toujours fidèlement le
-  `chat_template.jinja` embarqué par l'export Unsloth (sans ça, le modèle
-  reçoit un prompt brut sans balises de rôle et répond n'importe quoi).
-  Omettre l'option laisse Ollama deviner (fonctionne pour certains modèles,
-  pas d'autres — vérifier avec `curl :11434/api/show -d '{"model":"..."}'`
-  si le template a l'air vide `{{ .Prompt }}`).
-- `--system-prompt` : doit correspondre exactement au format utilisé côté
-  éval/API (`ia/eval/scripts/play_vs_stockfish.py` /
+- `--run-dir`: recursively searches the run directory for the `.gguf` file
+  (Unsloth writes it into a `<name>_gguf/` sibling folder, not the
+  requested directory — handled automatically).
+- `--template chatml`: forces the ChatML template (Qwen2/Qwen2.5) on the
+  Ollama side — needed because Ollama doesn't always faithfully pick up the
+  `chat_template.jinja` embedded by Unsloth's export (without this, the
+  model gets a raw prompt with no role tokens and answers nonsense).
+  Omitting the flag lets Ollama guess (works for some models, not others —
+  check with `curl :11434/api/show -d '{"model":"..."}'` if the template
+  looks empty, `{{ .Prompt }}`).
+- `--system-prompt`: must match exactly the format used on the eval/API
+  side (`ia/eval/scripts/play_vs_stockfish.py` /
   `api/app/services/ollama_chess.py`).
 
-## 4. `ia/eval` — parties contre Stockfish
+## 4. `ia/eval` — games against Stockfish
 
-Conteneur Docker léger (Stockfish + python-chess, pas de GPU) :
+Lightweight Docker container (Stockfish + python-chess, no GPU):
 
 ```bash
 docker compose run --rm eval scripts/play_vs_stockfish.py \
@@ -126,54 +125,52 @@ docker compose run --rm eval scripts/play_vs_stockfish.py \
   --run-dir /models/chess-grpo-05b
 ```
 
-- `--prompt-format` : `fen_san` (FEN seul, réponse = coup SAN brut — format
-  de nos fine-tunes Gemma) ou `fen_uci_legal` (FEN + côté au trait + liste
-  des coups légaux en UCI, réponse = `<rationale>...</rationale>
-  <uci_move>...</uci_move>` — format du modèle chess-grpo).
-- `--run-dir` (optionnel) : si `mlflow_run_id.txt` existe dans ce dossier
-  (créé par `finetune.py`/`export_gguf.py`), les métriques d'éval sont
-  loguées **dans le même run MLflow** que l'entraînement plutôt que dans un
-  run isolé.
+- `--prompt-format`: `fen_san` (FEN only, response = bare SAN move — our
+  from-scratch Gemma fine-tunes' format) or `fen_uci_legal` (FEN + side to
+  move + legal moves in UCI, response = `<rationale>...</rationale>
+  <uci_move>...</uci_move>` — the chess-grpo model's format).
+- `--run-dir` (optional): if `mlflow_run_id.txt` exists in that folder
+  (created by `finetune.py`/`export_gguf.py`), eval metrics are logged
+  **into the same MLflow run** as training instead of a disconnected one.
 
-## 5. Sweep complet (orchestrateur host)
+## 5. Full sweep (host orchestrator)
 
-`ia/run_threshold_sweep.py` enchaîne dataset → finetune → register → eval
-pour plusieurs tailles de dataset (pipeline Gemma FEN→SAN) et agrège les
-résultats. À lancer avec l'interpréteur `ia/data/venv` (il pilote Docker via
-`docker compose run`) :
+`ia/run_threshold_sweep.py` chains dataset → finetune → register → eval
+across several dataset sizes (the Gemma FEN→SAN pipeline) and aggregates
+the results. Run it with the `ia/data/venv` interpreter (it drives Docker
+via `docker compose run`):
 
 ```bash
 ia\data\venv\Scripts\python.exe ia\run_threshold_sweep.py --raw-key raw/2026-07.jsonl.zst
 ```
 
-Résultat : `ia/eval/results/sweep_results.md` — robuste aux échecs partiels
-(un palier qui plante n'interrompt pas les suivants, résultats écrits au fur
-et à mesure).
+Output: `ia/eval/results/sweep_results.md` — resilient to partial failures
+(a size that crashes doesn't stop the rest; results are written as it
+goes).
 
-## Résultats obtenus
+## Results so far
 
-- **Gemma 2 2B (LoRA, FEN→SAN, 5k-30k exemples)** : 0 partie légale sur 5, à
-  tous les paliers testés — le modèle échoue dès son premier coup malgré une
-  loss d'entraînement qui converge correctement (le format "réponds
-  uniquement par un coup" ne tient pas à cette échelle de fine-tuning).
-- **`Qwen2.5-Coder-0.5B-Instruct-chess-grpo`** (spécialiste échecs entraîné
-  par RL sur des puzzles Lichess, utilisé tel quel sans fine-tuning
-  supplémentaire) : nette amélioration — 2 à 10 coups légaux enchaînés par
-  partie (contre 0-1 pour Gemma), et validé en conditions réelles sur
-  Lichess (voir intégration API dans [`api/app/services/`](../api/app/services)).
+- **Gemma 2 2B (LoRA, FEN→SAN, 5k-30k examples)**: 0 legal games out of 5,
+  at every size tested — the model fails on its very first move despite a
+  training loss that converges properly (the "respond with only a move"
+  format doesn't hold at this fine-tuning scale).
+- **`Qwen2.5-Coder-0.5B-Instruct-chess-grpo`** (a chess specialist trained
+  via RL on Lichess puzzles, used as-is with no further fine-tuning): clear
+  improvement — 2 to 10 legal moves in a row per game (vs. 0-1 for Gemma),
+  and validated live on actual Lichess games (see the API integration in
+  [`api/app/services/`](../api/app/services)).
 
-## ⚠️ Espace disque et pré-filtre Elo
+## ⚠️ Disk space and the Elo pre-filter
 
-MinIO tourne ici en single-node via docker-compose : son volume est stocké
-sur le **même disque physique** que le reste — ça n'ajoute pas d'espace.
-Un parsing 100% brut des ~89,3M parties du dump pourrait produire des
-centaines de Go / milliards de lignes.
+MinIO runs single-node here via docker-compose: its volume is stored on the
+**same physical disk** as everything else — it doesn't add storage. A 100%
+raw parse of the dump's ~89.3M games could produce hundreds of GB / billions
+of lines.
 
-`parse_pgn.py` applique donc un pré-filtre Elo bon marché (lecture des
-headers PGN uniquement, avant de rejouer les coups — `--elo-filter-mode`,
-défaut `either`, plage large 1600-2400) pour borner la taille de la sortie
-intermédiaire. Ce n'est **pas** le filtrage qualité final (celui-là est fait
-par `build_dataset.py`, plage 1800-2200 par défaut) : c'est un garde-fou
-disque, désactivable via `--elo-filter-mode none` si l'espace disque le
-permet. Utiliser `--limit-games`/`--max-examples` sur les scripts pour
-itérer rapidement avant un run complet.
+`parse_pgn.py` therefore applies a cheap Elo pre-filter (reading PGN headers
+only, before replaying moves — `--elo-filter-mode`, default `either`, wide
+1600-2400 range) to bound the size of the intermediate output. This is
+**not** the final quality filter (that's `build_dataset.py`'s job, 1800-2200
+range by default): it's a disk-space safeguard, disable it with
+`--elo-filter-mode none` if disk space allows. Use `--limit-games`/
+`--max-examples` on the scripts to iterate quickly before a full run.

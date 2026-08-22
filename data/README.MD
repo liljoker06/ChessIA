@@ -1,27 +1,27 @@
- # Datasets Lichess
- 
- Les données utilisées par le projet peuvent être téléchargées depuis la
- [Lichess Open Database](https://database.lichess.org/).
- 
- ## Installation
- 
- 1. Choisir le mois et le format du dataset sur le site de Lichess.
- 2. Télécharger l’archive au format `.pgn.zst`.
- 3. Placer l’archive `.pgn.zst` telle quelle dans ce dossier (`data/`), **sans
-	 la décompresser**.
- 
- ## ⚠️ Ne pas extraire l’archive
- 
- Un `.pgn.zst` décompresse souvent en un fichier **5 à 10 fois plus gros**
- (annotations `%eval`/`%clk` très répétitives). Un mois de Lichess pèse
- ~29 Go compressé mais peut dépasser 150-300 Go une fois extrait, ce qui ne
- tient pas forcément sur le disque — une extraction interrompue par manque
- d’espace laisse un fichier `.pgn` corrompu (tronqué/incohérent dès le début).
- 
- Utiliser plutôt [`api/utils/readFiles.py`](../api/utils/readFiles.py), qui lit
- le `.pgn.zst` directement en streaming (décompression à la volée via le
- package `zstandard`) sans jamais écrire le fichier complet décompressé sur
- disque. Le même principe est repris par les scripts de pipeline dans
- [`ia/`](../ia/README.md) — c'est là que se trouvent le parsing, le
- fine-tuning et l'évaluation du modèle. Ce dossier `data/` ne contient que le
- fichier brut téléchargé et les datasets générés (`processed/`).
+# Lichess datasets
+
+The data used by the project can be downloaded from the
+[Lichess Open Database](https://database.lichess.org/).
+
+## Setup
+
+1. Pick the month and dataset format on the Lichess site.
+2. Download the archive in `.pgn.zst` format.
+3. Drop the `.pgn.zst` archive as-is into this folder (`data/`), **without
+   decompressing it**.
+
+## ⚠️ Do not extract the archive
+
+A `.pgn.zst` often decompresses into a file **5 to 10 times bigger**
+(the `%eval`/`%clk` annotations are highly repetitive). A month of Lichess
+weighs ~29 GB compressed but can exceed 150-300 GB once extracted, which may
+not fit on disk — an extraction interrupted by lack of space leaves a
+corrupted `.pgn` file (truncated/inconsistent from the very start).
+
+Use [`api/utils/readFiles.py`](../api/utils/readFiles.py) instead, which
+reads the `.pgn.zst` directly in streaming mode (on-the-fly decompression via
+the `zstandard` package) without ever writing the full decompressed file to
+disk. The same principle is used by the pipeline scripts in
+[`ia/`](../ia/README.md) — that's where the parsing, fine-tuning, and model
+evaluation live. This `data/` folder only holds the downloaded raw file and
+the generated datasets (`processed/`).
