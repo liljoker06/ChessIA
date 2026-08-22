@@ -34,7 +34,14 @@ def query_ollama(ollama_url: str, model_name: str, prompt: str, num_predict: int
             "model": model_name,
             "prompt": prompt,
             "stream": False,
-            "options": {"num_predict": num_predict},
+            "options": {
+                "num_predict": num_predict,
+                # Matches the chess-grpo model card's recommended sampling
+                # params -- keep in sync with api/app/services/ollama_chess.py.
+                "temperature": 1.0,
+                "top_p": 0.95,
+                "top_k": 64,
+            },
         },
         timeout=120,
     )

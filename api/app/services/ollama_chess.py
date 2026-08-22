@@ -65,7 +65,16 @@ async def get_move(board: chess.Board, prompt_format: str = DEFAULT_PROMPT_FORMA
                 "model": OLLAMA_MODEL,
                 "prompt": prompt,
                 "stream": False,
-                "options": {"num_predict": fmt["num_predict"]},
+                "options": {
+                    "num_predict": fmt["num_predict"],
+                    # Matches the chess-grpo model card's recommended sampling
+                    # params -- without these, Ollama's low-diversity defaults
+                    # make a small model like this pick the same opening move
+                    # almost every game.
+                    "temperature": 1.0,
+                    "top_p": 0.95,
+                    "top_k": 64,
+                },
             },
             timeout=120,
         )
