@@ -1,7 +1,0 @@
-torch==2.5.1
-unsloth==2025.11.1
-unsloth_zoo
-bitsandbytes
-datasets
-python-dotenv==1.2.3
-requests==2.32.3

@@ -1,6 +1,8 @@
 import { Chess, type PieceSymbol, type Square } from "chess.js";
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { ChessBoard } from "../components/ChessBoard";
+import { useAuth } from "../context/AuthContext";
 import { DIFFICULTIES } from "../engine/difficulty";
 import { StockfishEngine } from "../engine/stockfishEngine";
 import { useGameHistory } from "../hooks/useGameHistory";
@@ -10,7 +12,30 @@ import { PIECE_STYLES } from "../theme/pieceStyles";
 import "../styles/watch.css";
 import "../styles/bots.css";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 type ColorChoice = "w" | "b" | "random";
+type OpponentType = "ai" | "user";
+
+const TIME_CONTROLS: { id: string; label: string }[] = [
+  { id: "bullet", label: "Bullet (2+1)" },
+  { id: "blitz", label: "Blitz (5+3)" },
+  { id: "rapid", label: "Rapide (10+5)" },
+  { id: "classical", label: "Classique (30+20)" },
+  { id: "correspondence", label: "Correspondance" },
+];
+
+const VARIANTS: { id: string; label: string; experimental?: boolean }[] = [
+  { id: "standard", label: "Standard" },
+  { id: "chess960", label: "Chess960", experimental: true },
+  { id: "crazyhouse", label: "Crazyhouse", experimental: true },
+  { id: "atomic", label: "Atomic", experimental: true },
+  { id: "kingOfTheHill", label: "Roi de la colline", experimental: true },
+  { id: "racingKings", label: "Course des rois", experimental: true },
+  { id: "horde", label: "Horde", experimental: true },
+  { id: "threeCheck", label: "Trois échecs", experimental: true },
+  { id: "antichess", label: "Antichess", experimental: true },
+];
 
 const PROMOTION_PIECES: { type: PieceSymbol; label: string }[] = [
   { type: "q", label: "Dame" },
@@ -32,10 +57,19 @@ const PIECE_UNICODE: Record<string, string> = {
 };
 
 export function Bots() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [started, setStarted] = useState(false);
   const [colorChoice, setColorChoice] = useState<ColorChoice>("w");
   const [difficultyId, setDifficultyId] = useState(DIFFICULTIES[1].id);
   const [playerColor, setPlayerColor] = useState<"w" | "b">("w");
+  const [startingLiveGame, setStartingLiveGame] = useState(false);
+  const [liveGameError, setLiveGameError] = useState<string | null>(null);
+  const [opponentType, setOpponentType] = useState<OpponentType>("ai");
+  const [opponentUsername, setOpponentUsername] = useState("");
+  const [timeControl, setTimeControl] = useState("rapid");
+  const [variantChoice, setVariantChoice] = useState("standard");
+  const [rated, setRated] = useState(false);
 
   const gameRef = useRef(new Chess());
   const engineRef = useRef<StockfishEngine | null>(null);
@@ -134,6 +168,44 @@ export function Bots() {
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isGameOver]);
+
+  async function handleStartLiveGame() {
+    const token = localStorage.getItem("chess-api-token");
+    if (!token) return;
+
+    if (opponentType === "user" && !opponentUsername.trim()) {
+      setLiveGameError("Indique le pseudo Lichess de l'adversaire.");
+      return;
+    }
+
+    setStartingLiveGame(true);
+    setLiveGameError(null);
+    try {
+      const res = await fetch(`${API_URL}/api/play/start`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          difficulty: difficultyId,
+          color: colorChoice,
+          opponent: opponentType,
+          username: opponentType === "user" ? opponentUsername.trim() : null,
+          time_control: timeControl,
+          variant: variantChoice,
+          rated: opponentType === "user" ? rated : false,
+        }),
+      });
+      if (!res.ok) throw new Error("Impossible de lancer la partie");
+      const data = await res.json();
+      navigate("/partie", { state: { liveGameId: data.game_id } });
+    } catch (err) {
+      setLiveGameError(err instanceof Error ? err.message : "Erreur inconnue");
+    } finally {
+      setStartingLiveGame(false);
+    }
+  }
 
   function handleStart() {
     const color: "w" | "b" = colorChoice === "random" ? (Math.random() < 0.5 ? "w" : "b") : colorChoice;
@@ -269,8 +341,92 @@ export function Bots() {
           </div>
 
           <button className="btn btn-primary btn-block" onClick={handleStart}>
-            Commencer la partie
+            Commencer la partie (local)
           </button>
+
+          {user?.isLichess && (
+            <>
+              <hr className="setup-divider" />
+              <h2 className="setup-live-title">Jouer sur Lichess (en direct)</h2>
+
+              <div className="field">
+                <label>Adversaire</label>
+                <div className="choice-row">
+                  <button
+                    type="button"
+                    className={`btn ${opponentType === "ai" ? "btn-primary" : "btn-ghost"}`}
+                    onClick={() => setOpponentType("ai")}
+                  >
+                    IA Lichess
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn ${opponentType === "user" ? "btn-primary" : "btn-ghost"}`}
+                    onClick={() => setOpponentType("user")}
+                  >
+                    Joueur ou bot précis
+                  </button>
+                </div>
+                {opponentType === "user" && (
+                  <input
+                    className="input"
+                    type="text"
+                    placeholder="Pseudo Lichess de l'adversaire"
+                    value={opponentUsername}
+                    onChange={(e) => setOpponentUsername(e.target.value)}
+                  />
+                )}
+              </div>
+
+              <div className="field">
+                <label>Cadence</label>
+                <div className="choice-row">
+                  {TIME_CONTROLS.map((tc) => (
+                    <button
+                      key={tc.id}
+                      type="button"
+                      className={`btn ${timeControl === tc.id ? "btn-primary" : "btn-ghost"}`}
+                      onClick={() => setTimeControl(tc.id)}
+                    >
+                      {tc.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="field">
+                <label>Variante</label>
+                <select
+                  className="input"
+                  value={variantChoice}
+                  onChange={(e) => setVariantChoice(e.target.value)}
+                >
+                  {VARIANTS.map((v) => (
+                    <option key={v.id} value={v.id}>
+                      {v.label}
+                      {v.experimental ? " (expérimental — l'IA n'a jamais été entraînée dessus)" : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {opponentType === "user" && (
+                <label className="checkbox-field">
+                  <input type="checkbox" checked={rated} onChange={(e) => setRated(e.target.checked)} />
+                  Partie classée
+                </label>
+              )}
+
+              <button
+                className="btn btn-ghost btn-block"
+                onClick={handleStartLiveGame}
+                disabled={startingLiveGame}
+              >
+                {startingLiveGame ? "Lancement…" : "Lancer la partie sur Lichess"}
+              </button>
+              {liveGameError && <p className="field-error">{liveGameError}</p>}
+            </>
+          )}
         </div>
       </div>
     );

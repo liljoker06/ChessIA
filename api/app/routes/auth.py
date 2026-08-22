@@ -27,6 +27,8 @@ def lichess_login():
     pkce_store[state] = code_verifier
 
     # Construction de l'URL Lichess
+    # scope bot:play + challenge:write: necessaire pour lancer/jouer des parties bot.
+    # Toute session obtenue avant cet ajout de scope doit se reconnecter.
     auth_url = (
         f"https://lichess.org/oauth?response_type=code"
         f"&client_id={CLIENT_ID}"
@@ -35,6 +37,7 @@ def lichess_login():
         f"&code_challenge_method=S256"
         f"&code_challenge={code_challenge}"
         f"&state={state}"
+        f"&scope=bot:play%20challenge:write"
     )
     
     #redirect du user 

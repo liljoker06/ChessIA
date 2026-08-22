@@ -1,4 +1,5 @@
 .chessboard {
+  position: relative;
   display: flex;
   flex-direction: column;
   border: 4px solid var(--border);
@@ -7,6 +8,22 @@
   width: min(640px, 92vw);
   aspect-ratio: 1 / 1;
   overflow: hidden;
+}
+
+.board-anim-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.board-anim-piece {
+  position: absolute;
+  width: 12.5%;
+  height: 12.5%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: left 0.2s ease, top 0.2s ease;
 }
 
 .board-row {

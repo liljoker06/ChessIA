@@ -1,0 +1,3 @@
+python-dotenv
+requests
+chess==1.11.2
