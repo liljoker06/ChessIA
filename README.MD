@@ -20,19 +20,18 @@ School project: fine-tune an LLM to play chess, serve it locally, and watch it p
 ---
 
 ## Demo
+
 ### Présentation
 
-<div style="padding:50.94% 0 0 0;position:relative;"><iframe src="https://player.vimeo.com/video/1220459565?title=0&amp;byline=0&amp;portrait=0&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479" frameborder="0" allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share" referrerpolicy="strict-origin-when-cross-origin" style="position:absolute;top:0;left:0;width:100%;height:100%;" title="Présentation ChessAI"></iframe></div><script src="https://player.vimeo.com/api/player.js"></script>
+<div align="center">
+  <video src="./Présentation%20ChessAI.mp4" controls width="720" playsinline></video>
+</div>
 
-### ML Flow
+### MLflow
 
-<div style="padding:56.25% 0 0 0;position:relative;"><iframe src="https://player.vimeo.com/video/1220461849?title=0&amp;byline=0&amp;portrait=0&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479" frameborder="0" allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share" referrerpolicy="strict-origin-when-cross-origin" style="position:absolute;top:0;left:0;width:100%;height:100%;" title="ML Flow ChessAI"></iframe></div><script src="https://player.vimeo.com/api/player.js"></script>
-
-<!--
-  Once the video is ready: drop it into a GitHub issue/PR (drag & drop) to get a
-  user-images.githubusercontent.com link, then replace this block with:
-  https://github.com/user-attachments/assets/<id>
--->
+<div align="center">
+  <video src="./ML%20Flow%20ChessAI.mp4" controls width="720" playsinline></video>
+</div>
 
 ---
 
